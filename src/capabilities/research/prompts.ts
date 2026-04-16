@@ -105,7 +105,8 @@ export function buildStructuredResearchPrompt(params: {
     prompt += `\n\nADDITIONAL CONTEXT (synthesize this into your structured output):\n${params.additionalContext}`;
   }
 
-  prompt += `\n\nRespond with ONLY the JSON object matching the schema. No markdown, no preamble. Use current timestamp: ${new Date().toISOString()}`;
+  prompt +=
+    "\n\nRespond with ONLY the JSON object matching the schema. No markdown, no preamble. Use the current timestamp in the timestamp field.";
 
   return prompt;
 }

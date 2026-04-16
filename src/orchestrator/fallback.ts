@@ -64,6 +64,7 @@ export async function executeWithFallback(
     }
 
     attemptedProviders.push(provider);
+    let providerFailed = false;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       onAttempt?.(provider, attempt);
@@ -97,9 +98,9 @@ export async function executeWithFallback(
         onFailure?.(provider, error);
         errors.push({ provider, error: error.message });
 
-        // Record failure in circuit breaker and health tracker
-        circuitBreaker?.recordFailure(provider);
+        // Track failed attempts for observability.
         healthTracker?.recordError(provider);
+        providerFailed = true;
 
         // Only retry on the same provider for transient errors
         if (!isTransient(error) || attempt === maxRetries) {
@@ -109,6 +110,11 @@ export async function executeWithFallback(
         // Exponential backoff between retries on same provider
         await sleep(Math.min(1000 * 2 ** (attempt - 1), 8000));
       }
+    }
+
+    // Circuit breaker tracks provider-level request outcomes, not per-attempt retries.
+    if (providerFailed) {
+      circuitBreaker?.recordFailure(provider);
     }
   }
 

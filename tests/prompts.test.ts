@@ -14,6 +14,7 @@ import {
 } from "../src/capabilities/risk/prompts.js";
 import {
   buildResearchPrompt,
+  buildStructuredResearchPrompt,
   buildCatalystResearchPrompt,
 } from "../src/capabilities/research/prompts.js";
 
@@ -186,6 +187,21 @@ describe("Prompt Engineering", () => {
       });
       expect(prompt).toContain("TSLA");
       expect(prompt).toContain("1-4 weeks");
+    });
+
+    it("builds deterministic structured prompts for identical inputs", async () => {
+      const params = {
+        query: "Analyze NVDA growth drivers",
+        ticker: "NVDA",
+        depth: "standard" as const,
+      };
+
+      const prompt1 = buildStructuredResearchPrompt(params);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      const prompt2 = buildStructuredResearchPrompt(params);
+
+      expect(prompt1).toBe(prompt2);
+      expect(prompt1).toContain("Use the current timestamp in the timestamp field.");
     });
   });
 });
