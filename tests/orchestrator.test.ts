@@ -250,6 +250,64 @@ describe("Orchestrator Integration", () => {
     });
   });
 
+  describe("trace listeners", () => {
+    it("delivers trace events to instance-level listeners", async () => {
+      const events: Array<{ event: string }> = [];
+
+      mockClaude.complete.mockResolvedValue(
+        mockResponse("claude", "Traced result")
+      );
+
+      const orch = new Orchestrator({
+        cacheEnabled: false,
+        circuitBreakerEnabled: false,
+        adaptiveRoutingEnabled: false,
+        traceListeners: [(e) => events.push({ event: e.event })],
+      });
+
+      await orch.execute({ intent: "reasoning", prompt: "Trace me" });
+
+      const eventTypes = events.map((e) => e.event);
+      expect(eventTypes).toContain("request_start");
+      expect(eventTypes).toContain("route_resolved");
+      expect(eventTypes).toContain("provider_success");
+      expect(eventTypes).toContain("request_complete");
+    });
+  });
+
+  describe("cache with preferredProvider", () => {
+    it("does not return cached response from different provider", async () => {
+      mockClaude.complete.mockResolvedValue(
+        mockResponse("claude", "Claude perspective")
+      );
+      mockGrok.complete.mockResolvedValue(
+        mockResponse("grok", "Grok perspective")
+      );
+
+      const orch = new Orchestrator({
+        cacheEnabled: true,
+        circuitBreakerEnabled: false,
+        adaptiveRoutingEnabled: false,
+      });
+
+      await orch.execute({
+        intent: "sentiment",
+        prompt: "AAPL outlook",
+        preferredProvider: "claude",
+      });
+
+      const grokResult = await orch.execute({
+        intent: "sentiment",
+        prompt: "AAPL outlook",
+        preferredProvider: "grok",
+      });
+
+      // Should NOT return Claude's cached response
+      expect(grokResult.provider).toBe("grok");
+      expect(grokResult.content).toBe("Grok perspective");
+    });
+  });
+
   describe("lifecycle hooks", () => {
     it("calls onRoute, onComplete callbacks", async () => {
       const onRoute = vi.fn();

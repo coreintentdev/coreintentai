@@ -73,6 +73,20 @@ describe("ResponseCache", () => {
       });
       expect(a).not.toBe(b);
     });
+
+    it("includes preferredProvider in key derivation", () => {
+      const a = ResponseCache.buildKey({
+        intent: "sentiment",
+        prompt: "Analyze AAPL",
+        preferredProvider: "claude",
+      });
+      const b = ResponseCache.buildKey({
+        intent: "sentiment",
+        prompt: "Analyze AAPL",
+        preferredProvider: "grok",
+      });
+      expect(a).not.toBe(b);
+    });
   });
 
   describe("get/set", () => {
@@ -157,6 +171,28 @@ describe("ResponseCache", () => {
       cache.clear();
       expect(cache.get("key1")).toBeUndefined();
       expect(cache.get("key2")).toBeUndefined();
+    });
+  });
+
+  describe("has", () => {
+    it("returns true for existing entries", () => {
+      cache.set("key1", makeResponse("test"), "general");
+      expect(cache.has("key1")).toBe(true);
+    });
+
+    it("returns false for missing entries", () => {
+      expect(cache.has("missing")).toBe(false);
+    });
+
+    it("does not inflate cache stats", () => {
+      cache.set("key1", makeResponse("test"), "general");
+
+      cache.has("key1"); // should NOT count as a hit
+      cache.has("missing"); // should NOT count as a miss
+
+      const stats = cache.getStats();
+      expect(stats.hits).toBe(0);
+      expect(stats.misses).toBe(0);
     });
   });
 

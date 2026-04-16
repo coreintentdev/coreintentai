@@ -121,12 +121,40 @@ export class AdaptiveRouter {
   }
 
   /**
+   * Find the max latency and max tokens across ALL providers for a given intent.
+   * Used for cross-provider normalization so scores are comparable.
+   */
+  private getIntentMaxima(intent: TaskIntent): {
+    maxLatency: number;
+    maxTokens: number;
+  } {
+    let maxLatency = 0;
+    let maxTokens = 0;
+
+    for (const [key, m] of this.metrics) {
+      if (!key.endsWith(`:${intent}`)) continue;
+      for (const obs of m.observations) {
+        if (obs.latencyMs > maxLatency) maxLatency = obs.latencyMs;
+        if (obs.totalTokens > maxTokens) maxTokens = obs.totalTokens;
+      }
+    }
+
+    return {
+      maxLatency: maxLatency || 1,
+      maxTokens: maxTokens || 1,
+    };
+  }
+
+  /**
    * Compute the composite score for a provider-intent pair.
    * Higher is better. Returns null if insufficient samples.
+   * Normalization uses cross-provider maxima so latency/cost
+   * scores are directly comparable between providers.
    */
   private computeScore(
     provider: ModelProvider,
-    intent: TaskIntent
+    intent: TaskIntent,
+    crossProviderMaxima?: { maxLatency: number; maxTokens: number }
   ): number | null {
     const m = this.getMetrics(provider, intent);
 
@@ -134,30 +162,26 @@ export class AdaptiveRouter {
       return null;
     }
 
-    // Use cached score if still fresh (< 5s old)
-    if (m.cachedScore !== null && Date.now() - m.lastScoreUpdate < 5000) {
+    // Use cached score if still fresh (< 5s old) and no explicit maxima provided
+    if (
+      !crossProviderMaxima &&
+      m.cachedScore !== null &&
+      Date.now() - m.lastScoreUpdate < 5000
+    ) {
       return m.cachedScore;
     }
 
     const { decayFactor } = this.config;
     const n = m.observations.length;
 
+    // Use cross-provider maxima for normalization (comparable across providers)
+    const { maxLatency, maxTokens } =
+      crossProviderMaxima ?? this.getIntentMaxima(intent);
+
     let weightedSuccessSum = 0;
     let weightedLatencySum = 0;
     let weightedCostSum = 0;
     let totalWeight = 0;
-
-    // Find max values for normalization (across this provider-intent)
-    let maxLatency = 0;
-    let maxTokens = 0;
-    for (const obs of m.observations) {
-      if (obs.latencyMs > maxLatency) maxLatency = obs.latencyMs;
-      if (obs.totalTokens > maxTokens) maxTokens = obs.totalTokens;
-    }
-
-    // Avoid division by zero
-    maxLatency = maxLatency || 1;
-    maxTokens = maxTokens || 1;
 
     for (let i = 0; i < n; i++) {
       const obs = m.observations[i];
@@ -202,11 +226,14 @@ export class AdaptiveRouter {
       ...staticRoute.fallbacks,
     ];
 
-    // Score each provider
+    // Compute cross-provider maxima once for comparable normalization
+    const maxima = this.getIntentMaxima(intent);
+
+    // Score each provider using shared maxima
     const scored: Array<{ provider: ModelProvider; score: number | null }> =
       allProviders.map((provider) => ({
         provider,
-        score: this.computeScore(provider, intent),
+        score: this.computeScore(provider, intent, maxima),
       }));
 
     // Check if we have enough data to adaptively route

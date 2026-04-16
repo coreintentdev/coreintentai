@@ -71,9 +71,10 @@ export class ResponseCache {
     intent: TaskIntent;
     prompt: string;
     systemPrompt?: string;
+    preferredProvider?: string;
   }): string {
-    // Simple but effective: hash the concatenated content
-    const raw = `${params.intent}|${params.systemPrompt ?? ""}|${params.prompt}`;
+    // Include all routing-relevant fields to avoid cross-provider cache collisions
+    const raw = `${params.intent}|${params.preferredProvider ?? ""}|${params.systemPrompt ?? ""}|${params.prompt}`;
     return fastHash(raw);
   }
 
@@ -136,9 +137,16 @@ export class ResponseCache {
 
   /**
    * Check if a key exists and is not expired.
+   * Does not affect stats or LRU ordering.
    */
   has(key: string): boolean {
-    return this.get(key) !== undefined;
+    const entry = this.entries.get(key);
+    if (!entry) return false;
+    if (Date.now() - entry.createdAt > entry.ttlMs) {
+      this.entries.delete(key);
+      return false;
+    }
+    return true;
   }
 
   /**

@@ -73,24 +73,25 @@ describe("AdaptiveRouter", () => {
     });
 
     it("demotes a provider with high failure rate", () => {
-      // Claude: 100% success
+      // Claude: 100% success, similar latency and cost
       for (let i = 0; i < 5; i++) {
         router.record({
           provider: "claude",
           intent: "signal",
-          latencyMs: 2000,
+          latencyMs: 800,
           success: true,
-          totalTokens: 800,
+          totalTokens: 500,
         });
       }
 
-      // Grok: 40% success (should be demoted despite lower latency)
+      // Grok: 20% success — success weight (0.5) dominates when
+      // latency and cost are comparable
       for (let i = 0; i < 5; i++) {
         router.record({
           provider: "grok",
           intent: "signal",
-          latencyMs: 500,
-          success: i < 2, // Only first 2 succeed
+          latencyMs: 600,
+          success: i < 1, // Only first 1 succeeds
           totalTokens: 400,
         });
       }
