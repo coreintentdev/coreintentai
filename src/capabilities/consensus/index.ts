@@ -144,8 +144,8 @@ function inferDirection(
   const bullScore = bullishSignals.filter((s) => text.includes(s)).length;
   const bearScore = bearishSignals.filter((s) => text.includes(s)).length;
 
-  if (bullScore > bearScore + 1) return "bullish";
-  if (bearScore > bullScore + 1) return "bearish";
+  if (bullScore > bearScore) return "bullish";
+  if (bearScore > bullScore) return "bearish";
   return "neutral";
 }
 

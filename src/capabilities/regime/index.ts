@@ -107,15 +107,13 @@ export class RegimeDetector {
       }
     }
 
-    const agreement = maxCount / results.length;
+    const agreement = maxCount / responses.length;
 
     return { results, consensusRegime, agreement };
   }
 
   async adaptStrategy(params: {
     regime: RegimeDetectionResult;
-    currentPositions?: string;
-    tradingStyle?: string;
   }): Promise<{
     regime: string;
     recommendations: string[];
