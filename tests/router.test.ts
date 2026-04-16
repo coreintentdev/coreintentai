@@ -37,6 +37,13 @@ describe("Intent Router", () => {
       expect(route.primary).toBe("claude");
     });
 
+    it("routes anomaly detection to Claude with Grok and Perplexity fallback", () => {
+      const route = resolveRoute("anomaly");
+      expect(route.primary).toBe("claude");
+      expect(route.fallbacks).toContain("grok");
+      expect(route.fallbacks).toContain("perplexity");
+    });
+
     it("uses Claude as default for general tasks", () => {
       const route = resolveRoute("general");
       expect(route.primary).toBe("claude");
