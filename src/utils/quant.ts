@@ -101,8 +101,9 @@ export function historicalVaR(
   const index = Math.floor((1 - confidence) * sorted.length);
   const varReturn = sorted[Math.max(index, 0)];
 
-  // VaR is expressed as a positive number (the loss)
-  return Math.abs(varReturn) * portfolioValue;
+  // VaR is expressed as a positive number (the loss).
+  // If the percentile return is positive (gain), there's no loss risk → VaR is 0.
+  return Math.abs(Math.min(varReturn, 0)) * portfolioValue;
 }
 
 /**
@@ -155,7 +156,8 @@ export function conditionalVaR(
   const avgTailReturn =
     tailReturns.reduce((sum, r) => sum + r, 0) / tailReturns.length;
 
-  return Math.abs(avgTailReturn) * portfolioValue;
+  // If average tail return is positive (gains), there's no loss risk → CVaR is 0.
+  return Math.abs(Math.min(avgTailReturn, 0)) * portfolioValue;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,14 +205,17 @@ export function sortinoRatio(params: {
 
   const mean = returns.reduce((s, r) => s + r, 0) / returns.length;
   const mar = riskFreeRate / periodsPerYear; // minimum acceptable return per period
-  const downsideReturns = returns.filter((r) => r < mar);
-
-  if (downsideReturns.length === 0) return Infinity;
-
-  const downsideDev = Math.sqrt(
-    downsideReturns.reduce((sum, r) => sum + (r - mar) ** 2, 0) /
-      downsideReturns.length
+  // Sortino & Price (1994): downside deviation uses ALL observations in the denominator,
+  // but only sums squared deviations for returns below the MAR.
+  // DD = sqrt(1/N * Σ min(R_t - MAR, 0)²)
+  const downsideSquaredSum = returns.reduce(
+    (sum, r) => (r < mar ? sum + (r - mar) ** 2 : sum),
+    0
   );
+
+  if (downsideSquaredSum === 0) return Infinity;
+
+  const downsideDev = Math.sqrt(downsideSquaredSum / returns.length);
 
   if (downsideDev === 0) return Infinity;
 

@@ -200,6 +200,7 @@ export class TelemetryCollector {
     let cachedCount = 0;
     let errorCount = 0;
     let fallbackCount = 0;
+    const providerFallbackCounts: Record<string, number> = {};
 
     for (const event of filtered) {
       const key = event.provider;
@@ -232,7 +233,10 @@ export class TelemetryCollector {
       if (event.success) m.successfulRequests++;
       else m.failedRequests++;
       if (event.cached) m.cachedRequests++;
-      if (event.fallbackUsed) fallbackCount++;
+      if (event.fallbackUsed) {
+        fallbackCount++;
+        providerFallbackCounts[key] = (providerFallbackCounts[key] ?? 0) + 1;
+      }
 
       totalCost += event.cost.totalCost;
       totalLatency += event.latencyMs;
@@ -245,7 +249,7 @@ export class TelemetryCollector {
       const m = byProvider[key];
       m.avgLatencyMs = m.totalRequests > 0 ? Math.round(m.totalLatencyMs / m.totalRequests) : 0;
       m.errorRate = m.totalRequests > 0 ? m.failedRequests / m.totalRequests : 0;
-      m.fallbackRate = filtered.length > 0 ? fallbackCount / filtered.length : 0;
+      m.fallbackRate = m.totalRequests > 0 ? (providerFallbackCounts[key] ?? 0) / m.totalRequests : 0;
 
       // P95 latency
       const providerLatencies = filtered

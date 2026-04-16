@@ -130,6 +130,18 @@ describe("historicalVaR", () => {
   it("returns 0 for empty returns", () => {
     expect(historicalVaR([], 0.95, 100_000)).toBe(0);
   });
+
+  it("returns 0 when all returns are positive (no loss risk)", () => {
+    const allPositive = Array.from({ length: 100 }, (_, i) => 0.01 + i * 0.001);
+    expect(historicalVaR(allPositive, 0.95, 100_000)).toBe(0);
+  });
+});
+
+describe("conditionalVaR", () => {
+  it("returns 0 when all returns are positive (no loss risk)", () => {
+    const allPositive = Array.from({ length: 100 }, (_, i) => 0.01 + i * 0.001);
+    expect(conditionalVaR(allPositive, 0.95, 100_000)).toBe(0);
+  });
 });
 
 describe("parametricVaR", () => {
