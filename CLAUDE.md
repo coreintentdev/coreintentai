@@ -17,7 +17,7 @@ Based in: New Zealand (NEVER register anything in Australia)
 - Not a standalone trading bot — it generates intelligence, not executions
 
 ## Related Repos
-- **coreintentdev/coreintent** — Main Next.js 14 trading engine app
+- **coreintentdev/coreintent** — Main Next.js 15 trading engine app
 - **coreintentdev/Zynthio** — Zynthio.ai landing page + waitlist
 
 ## Rules for AI Sessions
