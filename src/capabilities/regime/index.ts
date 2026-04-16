@@ -107,7 +107,7 @@ export class RegimeDetector {
       }
     }
 
-    const agreement = maxCount / results.length;
+    const agreement = maxCount / responses.length;
 
     return { results, consensusRegime, agreement };
   }
@@ -122,6 +122,7 @@ export class RegimeDetector {
     adjustments: string[];
   }> {
     const { strategyImplications, regime } = params.regime;
+    const { currentPositions, tradingStyle } = params;
 
     const recommendations = [
       ...strategyImplications.favoredStrategies.map(
@@ -155,6 +156,16 @@ export class RegimeDetector {
     if (regime === "ranging") {
       adjustments.push("Use mean-reversion entries at range extremes");
       adjustments.push("Reduce position holding time");
+    }
+
+    if (tradingStyle) {
+      adjustments.push(`Adjust entries/exits to ${tradingStyle} style`);
+    }
+
+    if (currentPositions) {
+      adjustments.push(
+        `Re-evaluate current positions for ${regime} regime alignment`
+      );
     }
 
     return { regime, recommendations, adjustments };
