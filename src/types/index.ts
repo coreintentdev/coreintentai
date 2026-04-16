@@ -33,6 +33,8 @@ export type TaskIntent =
   | "sentiment"      // Market sentiment — Grok primary, Claude fallback
   | "signal"         // Trade signal generation — Claude primary
   | "risk"           // Risk assessment — Claude primary
+  | "consensus"      // Multi-model arbitration — Claude as judge
+  | "regime"         // Market regime detection — Claude primary
   | "general";       // Default — use configured primary
 
 export interface OrchestrationRequest {
@@ -178,6 +180,76 @@ export const RiskAssessmentSchema = z.object({
 });
 
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
+
+// ---------------------------------------------------------------------------
+// Consensus Engine
+// ---------------------------------------------------------------------------
+
+export const ConsensusDivergenceSchema = z.object({
+  topic: z.string(),
+  positions: z.array(z.string()),
+  resolution: z.string(),
+});
+
+export const ConsensusResultSchema = z.object({
+  verdict: z.string(),
+  confidence: z.number().min(0).max(1),
+  agreementScore: z.number().min(0).max(1),
+  strongPoints: z.array(z.string()),
+  divergencePoints: z.array(ConsensusDivergenceSchema),
+  synthesizedView: z.string(),
+  riskFactors: z.array(z.string()),
+  actionableInsight: z.string(),
+});
+
+export type ConsensusResult = z.infer<typeof ConsensusResultSchema>;
+export type ConsensusDivergence = z.infer<typeof ConsensusDivergenceSchema>;
+
+// ---------------------------------------------------------------------------
+// Market Regime Detection
+// ---------------------------------------------------------------------------
+
+export const MarketRegime = z.enum([
+  "trending_bull",
+  "trending_bear",
+  "ranging",
+  "volatile",
+  "crisis",
+]);
+
+export const RegimeIndicatorSchema = z.object({
+  name: z.string(),
+  value: z.string(),
+  signal: z.enum(["confirms", "contradicts", "neutral"]),
+  weight: z.number().min(0).max(1),
+});
+
+export const RegimeTransitionSchema = z.object({
+  probability: z.number().min(0).max(1),
+  likelyNextRegime: z.string(),
+  earlyWarnings: z.array(z.string()),
+});
+
+export const StrategyImplicationsSchema = z.object({
+  favoredStrategies: z.array(z.string()),
+  avoidStrategies: z.array(z.string()),
+  positionSizing: z.enum(["aggressive", "normal", "reduced", "defensive"]),
+  hedgingAdvice: z.string(),
+});
+
+export const RegimeDetectionResultSchema = z.object({
+  regime: MarketRegime,
+  confidence: z.number().min(0).max(1),
+  subRegime: z.string(),
+  indicators: z.array(RegimeIndicatorSchema),
+  transitionRisk: RegimeTransitionSchema,
+  strategyImplications: StrategyImplicationsSchema,
+  timeframe: z.enum(["intraday", "daily", "weekly", "monthly"]),
+  invalidation: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type RegimeDetectionResult = z.infer<typeof RegimeDetectionResultSchema>;
 
 // ---------------------------------------------------------------------------
 // Agent System
