@@ -19,6 +19,24 @@ export {
 } from "./orchestrator/fallback.js";
 
 // ---------------------------------------------------------------------------
+// Resilience & Performance
+// ---------------------------------------------------------------------------
+export { CircuitBreakerRegistry } from "./orchestrator/circuit-breaker.js";
+export { ResponseCache } from "./orchestrator/cache.js";
+export { AdaptiveRouter } from "./orchestrator/adaptive-router.js";
+
+// ---------------------------------------------------------------------------
+// Observability
+// ---------------------------------------------------------------------------
+export {
+  createTrace,
+  generateTraceId,
+  globalTraceRegistry,
+  consoleTraceListener,
+  TraceContext,
+} from "./orchestrator/trace.js";
+
+// ---------------------------------------------------------------------------
 // Model Adapters
 // ---------------------------------------------------------------------------
 export {
@@ -87,3 +105,18 @@ export {
   TradingSignalSchema,
   RiskAssessmentSchema,
 } from "./types/index.js";
+
+export type {
+  CircuitState,
+  CircuitBreakerConfig,
+} from "./orchestrator/circuit-breaker.js";
+
+export type { CacheConfig } from "./orchestrator/cache.js";
+
+export type { AdaptiveRouterConfig } from "./orchestrator/adaptive-router.js";
+
+export type {
+  TraceEvent,
+  TraceEventType,
+  TraceListener,
+} from "./orchestrator/trace.js";
