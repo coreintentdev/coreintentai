@@ -120,16 +120,22 @@ function tryParse(text: string): unknown | undefined {
 
 /**
  * Find the outermost balanced { } or [ ] pair in a string and parse it.
+ * Tries whichever bracket appears first in the text so that an enclosing
+ * array (e.g. `[{"ticker":"AAPL",...}]`) is preferred over an inner object.
  */
 function extractBracketedJson(text: string): unknown | undefined {
-  // Try object first, then array
-  for (const [open, close] of [
+  const pairs: Array<[string, string]> = [
     ["{", "}"],
     ["[", "]"],
-  ] as const) {
-    const startIdx = text.indexOf(open);
-    if (startIdx === -1) continue;
+  ];
 
+  // Sort bracket pairs by which appears first in the text
+  const sorted = pairs
+    .map(([open, close]) => ({ open, close, idx: text.indexOf(open) }))
+    .filter((p) => p.idx !== -1)
+    .sort((a, b) => a.idx - b.idx);
+
+  for (const { open, close, idx: startIdx } of sorted) {
     // Walk forward to find the matching close bracket
     let depth = 0;
     let inString = false;

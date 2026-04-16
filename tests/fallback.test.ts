@@ -238,6 +238,11 @@ describe("isTransient", () => {
     ["Model not found", false],
     ["Permission denied", false],
     ["Invalid request body", false],
+    // False positives: numeric codes embedded in larger numbers
+    ["Token limit exceeded: 4500 tokens", false],
+    ["Max output 4290 exceeded", false],
+    ["Chunk size 5020 too large", false],
+    ["processed 50200 records", false],
   ])("classifies '%s' as transient=%s", (message, expected) => {
     expect(isTransient(new Error(message))).toBe(expected);
   });

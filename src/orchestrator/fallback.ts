@@ -102,15 +102,11 @@ export async function executeWithFallback(
 // Transient Error Detection
 // ---------------------------------------------------------------------------
 
-/** Patterns that indicate a transient (retryable) failure. */
-const TRANSIENT_PATTERNS = [
+/** Substring patterns that indicate a transient (retryable) failure. */
+const TRANSIENT_SUBSTRINGS = [
   "timeout",
   "timed out",
   "rate limit",
-  "429",
-  "503",
-  "502",
-  "500",
   "econnreset",
   "econnrefused",
   "enotfound",
@@ -127,9 +123,23 @@ const TRANSIENT_PATTERNS = [
   "capacity",
 ] as const;
 
+/**
+ * Regex patterns for HTTP status codes — use word boundaries to avoid
+ * matching codes embedded in larger numbers (e.g. "4500 tokens").
+ */
+const TRANSIENT_CODE_PATTERNS = [
+  /\b429\b/,
+  /\b500\b/,
+  /\b502\b/,
+  /\b503\b/,
+] as const;
+
 export function isTransient(error: Error): boolean {
   const msg = error.message.toLowerCase();
-  return TRANSIENT_PATTERNS.some((pattern) => msg.includes(pattern));
+  return (
+    TRANSIENT_SUBSTRINGS.some((pattern) => msg.includes(pattern)) ||
+    TRANSIENT_CODE_PATTERNS.some((rx) => rx.test(msg))
+  );
 }
 
 // ---------------------------------------------------------------------------

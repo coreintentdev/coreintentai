@@ -76,6 +76,21 @@ Hope that helps!`;
       expect(result).toEqual([1, 2, 3]);
     });
 
+    it("prefers enclosing array over inner object (bracket ordering)", () => {
+      const content =
+        'Here are the signals: [{"name": "a", "value": 1}, {"name": "b", "value": 2}]';
+      const result = extractJson(content);
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(2);
+    });
+
+    it("extracts array when [ appears before { in preamble text", () => {
+      const content = 'Results: [{"ticker": "AAPL"}, {"ticker": "GOOG"}] end.';
+      const result = extractJson(content);
+      expect(Array.isArray(result)).toBe(true);
+      expect((result as Array<{ ticker: string }>)[0].ticker).toBe("AAPL");
+    });
+
     it("handles nested objects", () => {
       const content =
         'Result: {"outer": {"inner": true}, "list": [1, 2]} done.';
