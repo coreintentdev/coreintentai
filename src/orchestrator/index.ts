@@ -5,6 +5,11 @@
  * routes them to the optimal model via intent-based routing, and
  * handles fallback gracefully.
  *
+ * Enhanced with:
+ * - Circuit breaker integration for provider resilience
+ * - Response caching to avoid duplicate API calls
+ * - Observability hooks for cost/latency tracking
+ *
  * Usage:
  *   const orchestrator = new Orchestrator();
  *   const result = await orchestrator.execute({
@@ -19,33 +24,60 @@ import type {
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
 import { executeWithFallback } from "./fallback.js";
+import { CircuitBreaker } from "../utils/circuit-breaker.js";
+import { ResponseCache } from "../utils/cache.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  cacheEnabled?: boolean;
+  circuitBreakerEnabled?: boolean;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
+  onCacheHit?: (request: OrchestrationRequest) => void;
 }
 
 export class Orchestrator {
   private options: Required<OrchestratorOptions>;
+  private circuitBreaker: CircuitBreaker;
+  private cache: ResponseCache<OrchestrationResponse>;
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
       maxRetries: options.maxRetries ?? 2,
       defaultTimeoutMs: options.defaultTimeoutMs ?? 30_000,
       fallbackEnabled: options.fallbackEnabled ?? true,
+      cacheEnabled: options.cacheEnabled ?? false,
+      circuitBreakerEnabled: options.circuitBreakerEnabled ?? true,
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
+      onCacheHit: options.onCacheHit ?? (() => {}),
     };
+
+    this.circuitBreaker = new CircuitBreaker();
+    this.cache = new ResponseCache({ enabled: this.options.cacheEnabled });
   }
 
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
+    // Check cache first
+    if (this.options.cacheEnabled) {
+      const cacheKey = ResponseCache.buildKey({
+        intent: request.intent,
+        prompt: request.prompt,
+        systemPrompt: request.systemPrompt,
+      });
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        this.options.onCacheHit(request);
+        return { ...cached, metadata: { ...cached.metadata, cached: true } };
+      }
+    }
+
     const providers = getProviderChain(
       request.intent,
       request.preferredProvider
@@ -69,6 +101,9 @@ export class Orchestrator {
           timeoutMs: request.timeoutMs ?? this.options.defaultTimeoutMs,
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
+        circuitBreaker: this.options.circuitBreakerEnabled
+          ? this.circuitBreaker
+          : undefined,
       });
 
       const response: OrchestrationResponse = {
@@ -80,10 +115,21 @@ export class Orchestrator {
         fallbackUsed: result.fallbackUsed,
         metadata: {
           attemptedProviders: result.attemptedProviders,
+          skippedProviders: result.skippedProviders,
           errors: result.errors,
           finishReason: result.response.finishReason,
         },
       };
+
+      // Store in cache
+      if (this.options.cacheEnabled) {
+        const cacheKey = ResponseCache.buildKey({
+          intent: request.intent,
+          prompt: request.prompt,
+          systemPrompt: request.systemPrompt,
+        });
+        this.cache.set(cacheKey, response, request.intent);
+      }
 
       this.options.onComplete(response);
       return response;
@@ -118,7 +164,36 @@ export class Orchestrator {
     }));
     return this.fan(requests as OrchestrationRequest[]);
   }
+
+  /**
+   * Get circuit breaker health status for all providers.
+   */
+  getProviderHealth() {
+    return this.circuitBreaker.getStatus();
+  }
+
+  /**
+   * Get cache performance statistics.
+   */
+  getCacheStats() {
+    return this.cache.getStats();
+  }
+
+  /**
+   * Clear the response cache.
+   */
+  clearCache(): void {
+    this.cache.clear();
+  }
+
+  /**
+   * Reset circuit breakers for all providers.
+   */
+  resetCircuitBreakers(): void {
+    this.circuitBreaker.resetAll();
+  }
 }
 
 export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+export type { ErrorCategory } from "./fallback.js";
