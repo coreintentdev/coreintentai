@@ -7,6 +7,11 @@
 
 import { Orchestrator } from "../../orchestrator/index.js";
 import { TradingSignalSchema, type TradingSignal } from "../../types/index.js";
+import { parseJsonResponse, parseJsonArrayResponse } from "../../utils/parse-json.js";
+import {
+  validateSignalConstraints,
+  type ValidatedSignal,
+} from "../../utils/validate-signal.js";
 import {
   SIGNAL_SYSTEM_PROMPT,
   buildSignalPrompt,
@@ -39,6 +44,22 @@ export class SignalGenerator {
     });
 
     return parseSignalResponse(response.content);
+  }
+
+  /**
+   * Generate a signal with financial constraint validation.
+   * Returns the signal plus any warnings (e.g. stop above entry for a buy).
+   */
+  async generateValidated(params: {
+    ticker: string;
+    currentPrice: number;
+    timeframe: "scalp" | "day" | "swing" | "position";
+    technicalData?: string;
+    fundamentalData?: string;
+    marketContext?: string;
+  }): Promise<ValidatedSignal> {
+    const signal = await this.generate(params);
+    return validateSignalConstraints(signal);
   }
 
   /**
@@ -177,22 +198,11 @@ export class SignalGenerator {
 // ---------------------------------------------------------------------------
 
 function parseSignalResponse(content: string): TradingSignal {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-  return TradingSignalSchema.parse(parsed);
+  return parseJsonResponse(content, TradingSignalSchema);
 }
 
 function parseMultiSignalResponse(content: string): TradingSignal[] {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-
-  if (!Array.isArray(parsed)) {
-    throw new Error("Expected an array of signals");
-  }
-
-  return parsed.map((item: unknown) => TradingSignalSchema.parse(item));
+  return parseJsonArrayResponse(content, TradingSignalSchema);
 }
 
 export { SIGNAL_SYSTEM_PROMPT } from "./prompts.js";
