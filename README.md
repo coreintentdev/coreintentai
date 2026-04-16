@@ -10,7 +10,7 @@ Built by Corey McIvor / [Zynthio.ai](https://zynthio.ai) (NZ).
 
 | Repo | Purpose |
 |------|---------|
-| [coreintent](https://github.com/coreintentdev/coreintent) | Main application — Next.js 14, trading engine, AI fleet |
+| [coreintent](https://github.com/coreintentdev/coreintent) | Main application — Next.js 15, trading engine, AI fleet |
 | [coreintentai](https://github.com/coreintentdev/coreintentai) | This repo — AI intelligence layer |
 | [Zynthio](https://github.com/coreintentdev/Zynthio) | Zynthio.ai landing page + waitlist |
 
