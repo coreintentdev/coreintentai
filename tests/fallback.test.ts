@@ -241,4 +241,12 @@ describe("isTransient", () => {
   ])("classifies '%s' as transient=%s", (message, expected) => {
     expect(isTransient(new Error(message))).toBe(expected);
   });
+
+  it.each([
+    "Token limit exceeded: 4500 tokens",
+    "Model context-500 not found",
+    "Validation failed for field 502a",
+  ])("does not classify non-http numeric message '%s' as transient", (message) => {
+    expect(isTransient(new Error(message))).toBe(false);
+  });
 });

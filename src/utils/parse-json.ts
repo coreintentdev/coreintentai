@@ -122,14 +122,13 @@ function tryParse(text: string): unknown | undefined {
  * Find the outermost balanced { } or [ ] pair in a string and parse it.
  */
 function extractBracketedJson(text: string): unknown | undefined {
-  // Try object first, then array
-  for (const [open, close] of [
-    ["{", "}"],
-    ["[", "]"],
-  ] as const) {
-    const startIdx = text.indexOf(open);
-    if (startIdx === -1) continue;
+  // Try whichever opening bracket appears first in the text
+  const bracketPairs = ([["{", "}"], ["[", "]"]] as const)
+    .map(([open, close]) => ({ open, close, startIdx: text.indexOf(open) }))
+    .filter((pair) => pair.startIdx !== -1)
+    .sort((a, b) => a.startIdx - b.startIdx);
 
+  for (const { open, close, startIdx } of bracketPairs) {
     // Walk forward to find the matching close bracket
     let depth = 0;
     let inString = false;

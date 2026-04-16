@@ -107,10 +107,6 @@ const TRANSIENT_PATTERNS = [
   "timeout",
   "timed out",
   "rate limit",
-  "429",
-  "503",
-  "502",
-  "500",
   "econnreset",
   "econnrefused",
   "enotfound",
@@ -127,9 +123,15 @@ const TRANSIENT_PATTERNS = [
   "capacity",
 ] as const;
 
+const TRANSIENT_HTTP_STATUS_PATTERN =
+  /\b(?:http|status|code)\s*(?:429|500|502|503)\b|\b429\b(?=.*\btoo many requests\b)|\b500\b(?=.*\binternal server error\b)|\b502\b(?=.*\bbad gateway\b)|\b503\b(?=.*\bservice unavailable\b)|^\s*(?:429|500|502|503)\s*$/;
+
 export function isTransient(error: Error): boolean {
   const msg = error.message.toLowerCase();
-  return TRANSIENT_PATTERNS.some((pattern) => msg.includes(pattern));
+  return (
+    TRANSIENT_PATTERNS.some((pattern) => msg.includes(pattern)) ||
+    TRANSIENT_HTTP_STATUS_PATTERN.test(msg)
+  );
 }
 
 // ---------------------------------------------------------------------------

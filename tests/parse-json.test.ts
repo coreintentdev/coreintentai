@@ -76,6 +76,16 @@ Hope that helps!`;
       expect(result).toEqual([1, 2, 3]);
     });
 
+    it("extracts enclosing array when it contains objects", () => {
+      const content =
+        'Here are the signals: [{"name":"a","value":1},{"name":"b","value":2}]';
+      const result = extractJson(content);
+      expect(result).toEqual([
+        { name: "a", value: 1 },
+        { name: "b", value: 2 },
+      ]);
+    });
+
     it("handles nested objects", () => {
       const content =
         'Result: {"outer": {"inner": true}, "list": [1, 2]} done.';
@@ -200,5 +210,14 @@ describe("parseJsonArrayResponse", () => {
 \`\`\``;
     const result = parseJsonArrayResponse(content, TestSchema);
     expect(result).toHaveLength(1);
+  });
+
+  it("parses array-of-objects wrapped in preamble text", () => {
+    const content =
+      'Here are the signals: [{"name":"a","value":1},{"name":"b","value":2}]';
+    const result = parseJsonArrayResponse(content, TestSchema);
+    expect(result).toHaveLength(2);
+    expect(result[0].name).toBe("a");
+    expect(result[1].name).toBe("b");
   });
 });
