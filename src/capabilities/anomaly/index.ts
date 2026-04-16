@@ -144,6 +144,10 @@ export class AnomalyDetector {
 
     const merged = mergeAnomalyResults(params.ticker, results);
 
+    if (results.length < 2) {
+      return { results, mergedAnomalies: merged, agreement: 0.0 };
+    }
+
     // Agreement = proportion of anomaly types that both models identified
     const allTypes = new Set(
       results.flatMap((r) => r.anomalies.map((a) => a.type))
