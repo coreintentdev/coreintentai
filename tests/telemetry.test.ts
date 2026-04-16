@@ -107,6 +107,19 @@ describe("Telemetry", () => {
       expect(health.avgLatencyMs).toBe(200);
     });
 
+    it("computes p95 latency using nearest-rank indexing", () => {
+      const tel = new Telemetry({
+        windowSize: 20,
+      });
+
+      for (let i = 1; i <= 20; i++) {
+        tel.recordSuccess("claude", i, tokens);
+      }
+
+      const health = tel.getProviderHealth("claude");
+      expect(health.p95LatencyMs).toBe(19);
+    });
+
     it("tracks total tokens", () => {
       telemetry.recordSuccess("claude", 100, tokens);
       telemetry.recordSuccess("claude", 100, tokens);
@@ -146,6 +159,19 @@ describe("Telemetry", () => {
       const health = telemetry.getProviderHealth("claude");
       expect(health.lastSuccess).toBeDefined();
       expect(health.lastFailure).toBeDefined();
+    });
+
+    it("caps stored latencies to window size", () => {
+      const tel = new Telemetry({ windowSize: 3 });
+      tel.recordSuccess("grok", 100, tokens);
+      tel.recordSuccess("grok", 200, tokens);
+      tel.recordSuccess("grok", 300, tokens);
+      tel.recordSuccess("grok", 400, tokens);
+      tel.recordSuccess("grok", 500, tokens);
+
+      const health = tel.getProviderHealth("grok");
+      expect(health.totalRequests).toBe(5);
+      expect(health.avgLatencyMs).toBe(400);
     });
   });
 
@@ -248,6 +274,30 @@ describe("Telemetry", () => {
       vi.useRealTimers();
     });
 
+    it("re-opens circuit when a half_open probe fails", () => {
+      const tel = new Telemetry({
+        failureThreshold: 2,
+        failureRateThreshold: 0.5,
+        windowSize: 4,
+        resetTimeoutMs: 100,
+      });
+
+      vi.useFakeTimers();
+      tel.recordFailure("claude", "error 1");
+      tel.recordFailure("claude", "error 2");
+      expect(tel.getProviderHealth("claude").circuitState).toBe("open");
+
+      vi.advanceTimersByTime(150);
+      expect(tel.isProviderAvailable("claude")).toBe(true);
+      expect(tel.getProviderHealth("claude").circuitState).toBe("half_open");
+
+      tel.recordFailure("claude", "probe failed");
+
+      expect(tel.getProviderHealth("claude").circuitState).toBe("open");
+      expect(tel.isProviderAvailable("claude")).toBe(false);
+      vi.useRealTimers();
+    });
+
     it("filters unavailable providers from chain", () => {
       const tel = new Telemetry({
         failureThreshold: 2,
@@ -309,6 +359,20 @@ describe("Telemetry", () => {
         grok: 2,
         perplexity: 0,
       });
+    });
+
+    it("uses bounded latency window for aggregate averages", () => {
+      const tel = new Telemetry({ windowSize: 5 });
+      for (let i = 1; i <= 10; i++) {
+        tel.recordSuccess("claude", i * 100, tokens);
+      }
+
+      const health = tel.getProviderHealth("claude");
+      const stats = tel.getAggregateStats();
+
+      expect(health.totalRequests).toBe(10);
+      expect(health.avgLatencyMs).toBe(800); // Last 5: 600,700,800,900,1000
+      expect(stats.avgLatencyMs).toBe(800);
     });
   });
 

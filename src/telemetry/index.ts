@@ -199,7 +199,7 @@ export class Telemetry {
   ): void {
     const m = this.getMetrics(provider);
     m.successes++;
-    m.latencies.push(latencyMs);
+    this.pushLatency(provider, latencyMs);
     m.totalTokens += tokenUsage.totalTokens;
     m.lastSuccess = new Date().toISOString();
 
@@ -317,7 +317,9 @@ export class Telemetry {
           : 0,
       p95LatencyMs:
         sortedLatencies.length > 0
-          ? sortedLatencies[Math.floor(sortedLatencies.length * 0.95)] ?? 0
+          ? sortedLatencies[
+              Math.max(0, Math.ceil(sortedLatencies.length * 0.95) - 1)
+            ] ?? 0
           : 0,
       totalRequests: total,
       totalFailures: m.failures,
@@ -425,6 +427,14 @@ export class Telemetry {
     this.recentResults.set(provider, window);
   }
 
+  private pushLatency(provider: ModelProvider, latencyMs: number): void {
+    const m = this.getMetrics(provider);
+    m.latencies.push(latencyMs);
+    if (m.latencies.length > this.circuitConfig.windowSize) {
+      m.latencies.shift();
+    }
+  }
+
   private getFailureRate(provider: ModelProvider): number {
     const window = this.recentResults.get(provider) ?? [];
     if (window.length === 0) return 0;
@@ -436,6 +446,18 @@ export class Telemetry {
     const m = this.getMetrics(provider);
     const failureRate = this.getFailureRate(provider);
     const window = this.recentResults.get(provider) ?? [];
+
+    // Half-open probe failed: immediately re-open the circuit.
+    if (m.circuitState === "half_open") {
+      m.circuitState = "open";
+      m.circuitOpenedAt = Date.now();
+      this.emit("circuit_open", {
+        provider,
+        failureRate,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
 
     // Need enough data points before tripping
     if (window.length < this.circuitConfig.failureThreshold) return;

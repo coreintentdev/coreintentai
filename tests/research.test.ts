@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { ResearchResultSchema } from "../src/types/index.js";
 import {
+  RESEARCH_SYSTEM_PROMPT,
+  RESEARCH_SYNTHESIS_PROMPT,
   buildResearchPrompt,
   buildCompetitorAnalysisPrompt,
   buildCatalystResearchPrompt,
@@ -148,6 +150,20 @@ describe("Research Schema", () => {
 });
 
 describe("Research Prompts (Upgraded)", () => {
+  it("includes timestamp in the system prompt schema", () => {
+    expect(RESEARCH_SYSTEM_PROMPT).toContain(
+      `"timestamp": "<ISO 8601 timestamp>"`
+    );
+  });
+
+  it("includes explicit schema in synthesis prompt", () => {
+    expect(RESEARCH_SYNTHESIS_PROMPT).toContain(
+      `"timestamp": "<ISO 8601 timestamp>"`
+    );
+    expect(RESEARCH_SYNTHESIS_PROMPT).toContain(`"sections": [`);
+    expect(RESEARCH_SYNTHESIS_PROMPT).toContain(`"sources": [`);
+  });
+
   it("builds structured research prompt for standard depth", () => {
     const prompt = buildResearchPrompt({
       query: "What is the outlook for AAPL?",
