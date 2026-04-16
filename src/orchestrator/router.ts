@@ -45,6 +45,14 @@ const ROUTE_TABLE: Record<TaskIntent, RouteConfig> = {
     primary: "claude",
     fallbacks: ["grok"],
   },
+  consensus: {
+    primary: "claude",
+    fallbacks: ["grok"],
+  },
+  regime: {
+    primary: "claude",
+    fallbacks: ["grok"],
+  },
   general: {
     primary: "claude",
     fallbacks: ["grok", "perplexity"],

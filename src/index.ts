@@ -37,6 +37,8 @@ export { SentimentAnalyzer } from "./capabilities/sentiment/index.js";
 export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
+export { ConsensusEngine } from "./capabilities/consensus/index.js";
+export { RegimeDetector } from "./capabilities/regime/index.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -75,6 +77,9 @@ export type {
   SentimentResult,
   TradingSignal,
   RiskAssessment,
+  ConsensusResult,
+  ConsensusDivergence,
+  RegimeDetectionResult,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -86,4 +91,8 @@ export {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  ConsensusResultSchema,
+  ConsensusDivergenceSchema,
+  RegimeDetectionResultSchema,
+  MarketRegime,
 } from "./types/index.js";
