@@ -19,6 +19,13 @@ export {
 } from "./orchestrator/fallback.js";
 
 // ---------------------------------------------------------------------------
+// Resilience & Performance
+// ---------------------------------------------------------------------------
+export { CircuitBreaker } from "./orchestrator/circuit-breaker.js";
+export { ResponseCache } from "./orchestrator/cache.js";
+export { HealthTracker } from "./orchestrator/health.js";
+
+// ---------------------------------------------------------------------------
 // Model Adapters
 // ---------------------------------------------------------------------------
 export {
@@ -51,6 +58,16 @@ export {
 } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+export {
+  extractJSON,
+  extractAndValidate,
+  extractAndValidateArray,
+  JSONExtractionError,
+} from "./utils/json-extract.js";
+
+// ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 export {
@@ -75,6 +92,7 @@ export type {
   SentimentResult,
   TradingSignal,
   RiskAssessment,
+  ResearchResult,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -86,4 +104,12 @@ export {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  ResearchResultSchema,
 } from "./types/index.js";
+
+export type {
+  CircuitState,
+  CircuitBreakerConfig,
+} from "./orchestrator/circuit-breaker.js";
+export type { CacheConfig } from "./orchestrator/cache.js";
+export type { ProviderHealthSnapshot } from "./orchestrator/health.js";

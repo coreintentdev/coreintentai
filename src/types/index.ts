@@ -180,6 +180,42 @@ export const RiskAssessmentSchema = z.object({
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
 
 // ---------------------------------------------------------------------------
+// Market Research
+// ---------------------------------------------------------------------------
+
+export const ResearchFinding = z.object({
+  claim: z.string(),
+  source: z.string(),
+  confidence: z.enum(["confirmed", "likely", "speculative"]),
+  recency: z.enum(["breaking", "recent", "dated"]),
+});
+
+export const ResearchResultSchema = z.object({
+  ticker: z.string().optional(),
+  query: z.string(),
+  summary: z.string(),
+  findings: z.array(ResearchFinding),
+  catalysts: z
+    .array(
+      z.object({
+        event: z.string(),
+        expectedDate: z.string(),
+        impact: z.enum(["positive", "negative", "uncertain"]),
+        magnitude: z.enum(["low", "medium", "high"]),
+      })
+    )
+    .optional(),
+  risks: z.array(z.string()),
+  consensus: z.string(),
+  contrarianView: z.string().optional(),
+  dataFreshness: z.enum(["real_time", "same_day", "this_week", "older"]),
+  sources: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type ResearchResult = z.infer<typeof ResearchResultSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 

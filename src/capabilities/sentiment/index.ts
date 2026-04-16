@@ -7,6 +7,7 @@
 
 import { Orchestrator } from "../../orchestrator/index.js";
 import { SentimentResultSchema, type SentimentResult } from "../../types/index.js";
+import { extractAndValidate } from "../../utils/json-extract.js";
 import {
   SENTIMENT_SYSTEM_PROMPT,
   buildSentimentPrompt,
@@ -126,12 +127,7 @@ export class SentimentAnalyzer {
 // ---------------------------------------------------------------------------
 
 function parseSentimentResponse(content: string): SentimentResult {
-  // Extract JSON from possible markdown code fences
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-
-  const parsed = JSON.parse(raw);
-  return SentimentResultSchema.parse(parsed);
+  return extractAndValidate(content, SentimentResultSchema);
 }
 
 function scoreToSentiment(score: number): string {
