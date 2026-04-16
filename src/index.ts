@@ -63,6 +63,61 @@ export {
 } from "./config/models.js";
 
 // ---------------------------------------------------------------------------
+// Utilities — Quant Engine, Caching, Resilience, Observability
+// ---------------------------------------------------------------------------
+export {
+  // Quant: Position Sizing
+  kellyFraction,
+  positionSize,
+  // Quant: Risk Metrics
+  historicalVaR,
+  parametricVaR,
+  conditionalVaR,
+  // Quant: Performance Metrics
+  sharpeRatio,
+  sortinoRatio,
+  maxDrawdown,
+  calmarRatio,
+  // Quant: Statistics
+  correlation,
+  correlationMatrix,
+  beta,
+  annualizedVolatility,
+  standardDeviation,
+  sma,
+  ema,
+  // Quant: Risk-Reward
+  riskRewardRatio,
+  expectedValue,
+  profitFactor,
+  // Quant: Portfolio
+  portfolioVariance,
+  portfolioVolatility,
+  concentrationHHI,
+  effectivePositions,
+  // Caching
+  ResponseCache,
+  // Resilience
+  CircuitBreaker,
+  // Observability
+  TelemetryCollector,
+  estimateCost,
+} from "./utils/index.js";
+
+export type {
+  CacheConfig,
+  CacheStats,
+  CircuitBreakerConfig,
+  CircuitState,
+  TelemetryEvent,
+  TelemetrySummary,
+  ProviderMetrics,
+  CostEstimate,
+} from "./utils/index.js";
+
+export type { ErrorCategory } from "./orchestrator/index.js";
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 export type {
