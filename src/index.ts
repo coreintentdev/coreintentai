@@ -16,7 +16,13 @@ export { resolveRoute, getProviderChain } from "./orchestrator/router.js";
 export {
   executeWithFallback,
   CoreIntentAIError,
+  isTransient,
 } from "./orchestrator/fallback.js";
+export { CircuitBreaker } from "./orchestrator/circuit-breaker.js";
+export type {
+  CircuitState,
+  CircuitBreakerOptions,
+} from "./orchestrator/circuit-breaker.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -61,6 +67,20 @@ export {
   GROK_CONFIG,
   PERPLEXITY_CONFIG,
 } from "./config/models.js";
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+export {
+  parseJsonResponse,
+  parseJsonArrayResponse,
+  extractJson,
+  JsonParseError,
+} from "./utils/parse-json.js";
+export {
+  validateSignalConstraints,
+} from "./utils/validate-signal.js";
+export type { ValidatedSignal, SignalWarning } from "./utils/validate-signal.js";
 
 // ---------------------------------------------------------------------------
 // Types

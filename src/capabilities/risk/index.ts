@@ -10,6 +10,7 @@ import {
   RiskAssessmentSchema,
   type RiskAssessment,
 } from "../../types/index.js";
+import { parseJsonResponse } from "../../utils/parse-json.js";
 import {
   RISK_SYSTEM_PROMPT,
   buildPositionRiskPrompt,
@@ -135,10 +136,7 @@ export class RiskAssessor {
 // ---------------------------------------------------------------------------
 
 function parseRiskResponse(content: string): RiskAssessment {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-  return RiskAssessmentSchema.parse(parsed);
+  return parseJsonResponse(content, RiskAssessmentSchema);
 }
 
 export { RISK_SYSTEM_PROMPT } from "./prompts.js";

@@ -19,18 +19,21 @@ import type {
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
 import { executeWithFallback } from "./fallback.js";
+import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  circuitBreaker?: CircuitBreakerOptions | false;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
 }
 
 export class Orchestrator {
-  private options: Required<OrchestratorOptions>;
+  private options: Required<Omit<OrchestratorOptions, "circuitBreaker">>;
+  private circuitBreaker: CircuitBreaker | undefined;
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
@@ -41,6 +44,23 @@ export class Orchestrator {
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
     };
+
+    // Circuit breaker is enabled by default; pass false to disable
+    if (options.circuitBreaker !== false) {
+      this.circuitBreaker = new CircuitBreaker(
+        typeof options.circuitBreaker === "object"
+          ? options.circuitBreaker
+          : undefined
+      );
+    }
+  }
+
+  /**
+   * Get health stats for all providers via the circuit breaker.
+   * Returns undefined if circuit breaker is disabled.
+   */
+  getProviderHealth() {
+    return this.circuitBreaker?.getStats();
   }
 
   async execute(
@@ -69,6 +89,7 @@ export class Orchestrator {
           timeoutMs: request.timeoutMs ?? this.options.defaultTimeoutMs,
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
+        circuitBreaker: this.circuitBreaker,
       });
 
       const response: OrchestrationResponse = {
@@ -121,4 +142,6 @@ export class Orchestrator {
 }
 
 export { resolveRoute, getProviderChain } from "./router.js";
-export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+export { executeWithFallback, CoreIntentAIError, isTransient } from "./fallback.js";
+export { CircuitBreaker } from "./circuit-breaker.js";
+export type { CircuitState, CircuitBreakerOptions } from "./circuit-breaker.js";

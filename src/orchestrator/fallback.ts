@@ -2,17 +2,20 @@
  * CoreIntent AI — Fallback Engine
  *
  * Executes a task against a chain of providers, falling through on failure.
- * Provides resilience and ensures the system degrades gracefully.
+ * Integrates with the circuit breaker to skip providers that are known to be
+ * down, and provides resilience via retries with exponential backoff.
  */
 
 import type { ModelProvider, TokenUsage } from "../types/index.js";
 import { getAdapter } from "../models/index.js";
 import type { CompletionRequest, CompletionResponse } from "../models/base.js";
+import { CircuitBreaker } from "./circuit-breaker.js";
 
 export interface FallbackOptions {
   providers: ModelProvider[];
   request: CompletionRequest;
   maxRetries: number;
+  circuitBreaker?: CircuitBreaker;
   onAttempt?: (provider: ModelProvider, attempt: number) => void;
   onFailure?: (provider: ModelProvider, error: Error) => void;
 }
@@ -28,16 +31,25 @@ export interface FallbackResult {
  * Execute a completion request across a chain of providers.
  * Tries each provider in order. On failure, logs the error and moves
  * to the next provider in the chain.
+ *
+ * When a circuit breaker is provided, providers whose circuits are OPEN
+ * are skipped (unless all providers are down — then we try the first anyway).
  */
 export async function executeWithFallback(
   options: FallbackOptions
 ): Promise<FallbackResult> {
-  const { providers, request, maxRetries, onAttempt, onFailure } = options;
+  const { providers, request, maxRetries, circuitBreaker, onAttempt, onFailure } =
+    options;
+
+  // Filter out providers with open circuits
+  const chain = circuitBreaker
+    ? circuitBreaker.filterAvailable(providers)
+    : providers;
 
   const attemptedProviders: ModelProvider[] = [];
   const errors: Array<{ provider: ModelProvider; error: string }> = [];
 
-  for (const provider of providers) {
+  for (const provider of chain) {
     attemptedProviders.push(provider);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -50,6 +62,9 @@ export async function executeWithFallback(
         const response = request.timeoutMs
           ? await withTimeout(adapter.complete(request), request.timeoutMs)
           : await adapter.complete(request);
+
+        // Success — record it and return
+        circuitBreaker?.recordSuccess(provider);
 
         return {
           response,
@@ -66,6 +81,8 @@ export async function executeWithFallback(
 
         // Only retry on the same provider for transient errors
         if (!isTransient(error) || attempt === maxRetries) {
+          // Record the failure with the circuit breaker
+          circuitBreaker?.recordFailure(provider);
           break;
         }
 
@@ -82,20 +99,52 @@ export async function executeWithFallback(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Transient Error Detection
 // ---------------------------------------------------------------------------
 
-function isTransient(error: Error): boolean {
+/** Substring patterns that indicate a transient (retryable) failure. */
+const TRANSIENT_SUBSTRINGS = [
+  "timeout",
+  "timed out",
+  "rate limit",
+  "econnreset",
+  "econnrefused",
+  "enotfound",
+  "epipe",
+  "ehostunreach",
+  "enetunreach",
+  "socket hang up",
+  "network error",
+  "fetch failed",
+  "aborted",
+  "econnaborted",
+  "service unavailable",
+  "overloaded",
+  "capacity",
+] as const;
+
+/**
+ * Regex patterns for HTTP status codes — use word boundaries to avoid
+ * matching codes embedded in larger numbers (e.g. "4500 tokens").
+ */
+const TRANSIENT_CODE_PATTERNS = [
+  /\b429\b/,
+  /\b500\b/,
+  /\b502\b/,
+  /\b503\b/,
+] as const;
+
+export function isTransient(error: Error): boolean {
   const msg = error.message.toLowerCase();
   return (
-    msg.includes("timeout") ||
-    msg.includes("rate limit") ||
-    msg.includes("429") ||
-    msg.includes("503") ||
-    msg.includes("econnreset") ||
-    msg.includes("socket hang up")
+    TRANSIENT_SUBSTRINGS.some((pattern) => msg.includes(pattern)) ||
+    TRANSIENT_CODE_PATTERNS.some((rx) => rx.test(msg))
   );
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
