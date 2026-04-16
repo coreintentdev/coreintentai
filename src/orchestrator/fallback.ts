@@ -97,12 +97,13 @@ export async function executeWithFallback(
         onFailure?.(provider, error);
         errors.push({ provider, error: error.message });
 
-        // Record failure in circuit breaker and health tracker
-        circuitBreaker?.recordFailure(provider);
+        // Always record in health tracker (per-attempt granularity is useful for latency stats)
         healthTracker?.recordError(provider);
 
-        // Only retry on the same provider for transient errors
+        // Only record in circuit breaker once per provider (after all retries exhausted),
+        // not per-retry, to avoid prematurely tripping the breaker on transient errors
         if (!isTransient(error) || attempt === maxRetries) {
+          circuitBreaker?.recordFailure(provider);
           break;
         }
 
