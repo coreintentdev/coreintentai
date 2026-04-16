@@ -8,6 +8,10 @@
 import { Orchestrator } from "../../orchestrator/index.js";
 import { TradingSignalSchema, type TradingSignal } from "../../types/index.js";
 import {
+  extractAndValidate,
+  extractAndValidateArray,
+} from "../../utils/json-extract.js";
+import {
   SIGNAL_SYSTEM_PROMPT,
   buildSignalPrompt,
   buildMultiSignalPrompt,
@@ -177,22 +181,11 @@ export class SignalGenerator {
 // ---------------------------------------------------------------------------
 
 function parseSignalResponse(content: string): TradingSignal {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-  return TradingSignalSchema.parse(parsed);
+  return extractAndValidate(content, TradingSignalSchema);
 }
 
 function parseMultiSignalResponse(content: string): TradingSignal[] {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-
-  if (!Array.isArray(parsed)) {
-    throw new Error("Expected an array of signals");
-  }
-
-  return parsed.map((item: unknown) => TradingSignalSchema.parse(item));
+  return extractAndValidateArray(content, TradingSignalSchema);
 }
 
 export { SIGNAL_SYSTEM_PROMPT } from "./prompts.js";

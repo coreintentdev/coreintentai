@@ -2,6 +2,7 @@
  * CoreIntent AI — Market Research Prompts
  *
  * Prompts for web-grounded market research using Perplexity.
+ * Includes both free-text and structured JSON output variants.
  */
 
 export const RESEARCH_SYSTEM_PROMPT = `You are CoreIntent AI — a sovereign market research engine.
@@ -14,6 +15,46 @@ RULES:
 - Prioritize recency — stale data can be worse than no data.
 - Flag any conflicts of interest or bias in sources.
 - Be concise but thorough — cover what matters, skip the filler.`;
+
+export const STRUCTURED_RESEARCH_SYSTEM_PROMPT = `You are CoreIntent AI — a sovereign market research engine that outputs structured JSON.
+
+ROLE: Provide thorough, citation-backed market research and analysis.
+OUTPUT: You MUST respond with a single JSON object (no markdown fences, no preamble).
+
+RULES:
+- Always cite sources. Research without citations is opinion.
+- Distinguish between facts, consensus views, and contrarian takes.
+- Prioritize recency — stale data can be worse than no data.
+- Flag any conflicts of interest or bias in sources.
+
+REQUIRED JSON SCHEMA:
+{
+  "ticker": "optional — the ticker symbol if applicable",
+  "query": "the research query",
+  "summary": "2-3 sentence executive summary",
+  "findings": [
+    {
+      "claim": "specific finding or data point",
+      "source": "where this came from",
+      "confidence": "confirmed | likely | speculative",
+      "recency": "breaking | recent | dated"
+    }
+  ],
+  "catalysts": [
+    {
+      "event": "catalyst description",
+      "expectedDate": "date or timeframe",
+      "impact": "positive | negative | uncertain",
+      "magnitude": "low | medium | high"
+    }
+  ],
+  "risks": ["key risk 1", "key risk 2"],
+  "consensus": "what the market broadly expects",
+  "contrarianView": "optional — credible alternative thesis",
+  "dataFreshness": "real_time | same_day | this_week | older",
+  "sources": ["source1", "source2"],
+  "timestamp": "ISO 8601 datetime"
+}`;
 
 export function buildResearchPrompt(params: {
   query: string;
@@ -33,6 +74,38 @@ export function buildResearchPrompt(params: {
   } else if (depth === "deep") {
     prompt += "\n\nProvide comprehensive research covering: recent developments, analyst consensus, key metrics, risks, catalysts, and competitive landscape. Cite all sources.";
   }
+
+  return prompt;
+}
+
+export function buildStructuredResearchPrompt(params: {
+  query: string;
+  ticker?: string;
+  depth?: "quick" | "standard" | "deep";
+  additionalContext?: string;
+}): string {
+  const depth = params.depth ?? "standard";
+
+  let prompt = params.ticker
+    ? `Research ${params.ticker}: ${params.query}`
+    : params.query;
+
+  if (depth === "quick") {
+    prompt +=
+      "\n\nProvide a focused summary with the most important findings. Include 3-5 key findings.";
+  } else if (depth === "deep") {
+    prompt +=
+      "\n\nProvide comprehensive research. Include at least 5-8 findings covering: recent developments, analyst consensus, key metrics, risks, catalysts, and competitive landscape.";
+  } else {
+    prompt +=
+      "\n\nProvide balanced research with 4-6 key findings, risks, and consensus view.";
+  }
+
+  if (params.additionalContext) {
+    prompt += `\n\nADDITIONAL CONTEXT (synthesize this into your structured output):\n${params.additionalContext}`;
+  }
+
+  prompt += `\n\nRespond with ONLY the JSON object matching the schema. No markdown, no preamble. Set the timestamp field to the current time in ISO 8601 format.`;
 
   return prompt;
 }

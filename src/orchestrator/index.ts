@@ -3,7 +3,11 @@
  *
  * The central brain of the AI layer. Receives high-level requests,
  * routes them to the optimal model via intent-based routing, and
- * handles fallback gracefully.
+ * handles fallback gracefully. Now with:
+ *   - Circuit breaker: skip providers that are down
+ *   - Response cache: avoid redundant API calls
+ *   - Health metrics: track and rank providers by performance
+ *   - Adaptive routing: reorder provider chains based on health
  *
  * Usage:
  *   const orchestrator = new Orchestrator();
@@ -19,37 +23,96 @@ import type {
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
 import { executeWithFallback } from "./fallback.js";
+import { CircuitBreaker, type CircuitBreakerConfig } from "./circuit-breaker.js";
+import { ResponseCache, type CacheConfig } from "./cache.js";
+import { HealthTracker } from "./health.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  /** Enable response caching (default: true) */
+  cacheEnabled?: boolean;
+  /** Enable circuit breaker (default: true) */
+  circuitBreakerEnabled?: boolean;
+  /** Enable adaptive routing based on health metrics (default: true) */
+  adaptiveRouting?: boolean;
+  /** Circuit breaker configuration */
+  circuitBreakerConfig?: Partial<CircuitBreakerConfig>;
+  /** Cache configuration */
+  cacheConfig?: Partial<CacheConfig>;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
 }
 
 export class Orchestrator {
-  private options: Required<OrchestratorOptions>;
+  private options: Required<
+    Pick<
+      OrchestratorOptions,
+      | "maxRetries"
+      | "defaultTimeoutMs"
+      | "fallbackEnabled"
+      | "cacheEnabled"
+      | "circuitBreakerEnabled"
+      | "adaptiveRouting"
+      | "onRoute"
+      | "onComplete"
+      | "onError"
+    >
+  >;
+  private circuitBreaker: CircuitBreaker;
+  private cache: ResponseCache;
+  private healthTracker: HealthTracker;
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
       maxRetries: options.maxRetries ?? 2,
       defaultTimeoutMs: options.defaultTimeoutMs ?? 30_000,
       fallbackEnabled: options.fallbackEnabled ?? true,
+      cacheEnabled: options.cacheEnabled ?? true,
+      circuitBreakerEnabled: options.circuitBreakerEnabled ?? true,
+      adaptiveRouting: options.adaptiveRouting ?? true,
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
     };
+
+    this.circuitBreaker = new CircuitBreaker(options.circuitBreakerConfig);
+    this.cache = new ResponseCache(options.cacheConfig);
+    this.healthTracker = new HealthTracker();
   }
 
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
-    const providers = getProviderChain(
+    // Check cache first
+    if (this.options.cacheEnabled) {
+      const cacheKey = ResponseCache.buildKey({
+        intent: request.intent,
+        prompt: request.prompt,
+        systemPrompt: request.systemPrompt,
+        preferredProvider: request.preferredProvider,
+      });
+
+      const cached = this.cache.get(cacheKey);
+      if (cached) {
+        this.options.onComplete(cached);
+        return cached;
+      }
+    }
+
+    let providers = getProviderChain(
       request.intent,
       request.preferredProvider
     );
+
+    // Adaptive routing: reorder fallbacks based on health metrics
+    if (this.options.adaptiveRouting && providers.length > 1) {
+      const primary = providers[0];
+      const fallbacks = this.healthTracker.rankProviders(providers.slice(1));
+      providers = [primary, ...fallbacks];
+    }
 
     // If fallback is disabled, only use the primary provider
     const chain = this.options.fallbackEnabled
@@ -69,6 +132,10 @@ export class Orchestrator {
           timeoutMs: request.timeoutMs ?? this.options.defaultTimeoutMs,
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
+        circuitBreaker: this.options.circuitBreakerEnabled
+          ? this.circuitBreaker
+          : undefined,
+        healthTracker: this.healthTracker,
       });
 
       const response: OrchestrationResponse = {
@@ -80,10 +147,22 @@ export class Orchestrator {
         fallbackUsed: result.fallbackUsed,
         metadata: {
           attemptedProviders: result.attemptedProviders,
+          skippedProviders: result.skippedProviders,
           errors: result.errors,
           finishReason: result.response.finishReason,
         },
       };
+
+      // Cache the response
+      if (this.options.cacheEnabled) {
+        const cacheKey = ResponseCache.buildKey({
+          intent: request.intent,
+          prompt: request.prompt,
+          systemPrompt: request.systemPrompt,
+          preferredProvider: request.preferredProvider,
+        });
+        this.cache.set(cacheKey, response, request.intent);
+      }
 
       this.options.onComplete(response);
       return response;
@@ -118,7 +197,45 @@ export class Orchestrator {
     }));
     return this.fan(requests as OrchestrationRequest[]);
   }
+
+  /**
+   * Get health snapshots for all providers.
+   */
+  getProviderHealth() {
+    return this.healthTracker.getAllHealth();
+  }
+
+  /**
+   * Get circuit breaker state for a provider.
+   */
+  getCircuitState(provider: "claude" | "grok" | "perplexity") {
+    return this.circuitBreaker.getStats(provider);
+  }
+
+  /**
+   * Get cache statistics.
+   */
+  getCacheStats() {
+    return this.cache.getStats();
+  }
+
+  /**
+   * Invalidate all cached responses (e.g., after a market event).
+   */
+  invalidateCache() {
+    this.cache.invalidateAll();
+  }
+
+  /**
+   * Reset circuit breaker for a provider (e.g., after manual recovery).
+   */
+  resetCircuit(provider: "claude" | "grok" | "perplexity") {
+    this.circuitBreaker.reset(provider);
+  }
 }
 
 export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+export { CircuitBreaker } from "./circuit-breaker.js";
+export { ResponseCache } from "./cache.js";
+export { HealthTracker } from "./health.js";

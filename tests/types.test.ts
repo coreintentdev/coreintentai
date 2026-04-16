@@ -3,6 +3,7 @@ import {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  ResearchResultSchema,
 } from "../src/types/index.js";
 
 describe("Type Schemas", () => {
@@ -181,6 +182,85 @@ describe("Type Schemas", () => {
         portfolioScope: true,
       });
       expect(result.portfolioScope).toBe(true);
+    });
+  });
+
+  describe("ResearchResultSchema", () => {
+    const validResearch = {
+      ticker: "NVDA",
+      query: "NVDA growth catalysts 2026",
+      summary: "NVIDIA continues to dominate AI infrastructure with strong datacenter growth.",
+      findings: [
+        {
+          claim: "Datacenter revenue grew 150% YoY in Q1 2026",
+          source: "NVIDIA Q1 earnings report",
+          confidence: "confirmed" as const,
+          recency: "recent" as const,
+        },
+        {
+          claim: "New Blackwell Ultra chips expected Q3 2026",
+          source: "Reuters",
+          confidence: "likely" as const,
+          recency: "recent" as const,
+        },
+      ],
+      catalysts: [
+        {
+          event: "Blackwell Ultra launch",
+          expectedDate: "Q3 2026",
+          impact: "positive" as const,
+          magnitude: "high" as const,
+        },
+      ],
+      risks: ["Geopolitical restrictions on China exports", "Valuation compression"],
+      consensus: "Analysts broadly bullish with $200 median price target",
+      contrarianView: "Some argue AI capex cycle may peak in late 2026",
+      dataFreshness: "same_day" as const,
+      sources: ["NVIDIA earnings", "Reuters", "Bloomberg"],
+      timestamp: "2026-04-16T12:00:00.000Z",
+    };
+
+    it("accepts valid research data", () => {
+      const result = ResearchResultSchema.parse(validResearch);
+      expect(result.ticker).toBe("NVDA");
+      expect(result.findings).toHaveLength(2);
+      expect(result.catalysts).toHaveLength(1);
+    });
+
+    it("accepts research without optional fields", () => {
+      const { ticker, catalysts, contrarianView, ...minimal } = validResearch;
+      const result = ResearchResultSchema.parse(minimal);
+      expect(result.ticker).toBeUndefined();
+      expect(result.catalysts).toBeUndefined();
+    });
+
+    it("rejects invalid confidence value", () => {
+      const invalid = {
+        ...validResearch,
+        findings: [
+          { claim: "test", source: "test", confidence: "certain", recency: "recent" },
+        ],
+      };
+      expect(() => ResearchResultSchema.parse(invalid)).toThrow();
+    });
+
+    it("rejects invalid data freshness", () => {
+      expect(() =>
+        ResearchResultSchema.parse({
+          ...validResearch,
+          dataFreshness: "ancient",
+        })
+      ).toThrow();
+    });
+
+    it("rejects invalid catalyst impact", () => {
+      const invalid = {
+        ...validResearch,
+        catalysts: [
+          { event: "test", expectedDate: "Q1", impact: "maybe", magnitude: "high" },
+        ],
+      };
+      expect(() => ResearchResultSchema.parse(invalid)).toThrow();
     });
   });
 });

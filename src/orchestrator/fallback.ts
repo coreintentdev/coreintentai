@@ -2,17 +2,22 @@
  * CoreIntent AI — Fallback Engine
  *
  * Executes a task against a chain of providers, falling through on failure.
- * Provides resilience and ensures the system degrades gracefully.
+ * Integrates circuit breaker for resilience and health tracking for
+ * adaptive routing.
  */
 
 import type { ModelProvider, TokenUsage } from "../types/index.js";
 import { getAdapter } from "../models/index.js";
 import type { CompletionRequest, CompletionResponse } from "../models/base.js";
+import { CircuitBreaker } from "./circuit-breaker.js";
+import { HealthTracker } from "./health.js";
 
 export interface FallbackOptions {
   providers: ModelProvider[];
   request: CompletionRequest;
   maxRetries: number;
+  circuitBreaker?: CircuitBreaker;
+  healthTracker?: HealthTracker;
   onAttempt?: (provider: ModelProvider, attempt: number) => void;
   onFailure?: (provider: ModelProvider, error: Error) => void;
 }
@@ -21,23 +26,43 @@ export interface FallbackResult {
   response: CompletionResponse;
   fallbackUsed: boolean;
   attemptedProviders: ModelProvider[];
+  skippedProviders: ModelProvider[];
   errors: Array<{ provider: ModelProvider; error: string }>;
 }
 
 /**
  * Execute a completion request across a chain of providers.
- * Tries each provider in order. On failure, logs the error and moves
- * to the next provider in the chain.
+ * Checks circuit breakers before attempting each provider.
+ * Records health metrics after every attempt.
  */
 export async function executeWithFallback(
   options: FallbackOptions
 ): Promise<FallbackResult> {
-  const { providers, request, maxRetries, onAttempt, onFailure } = options;
+  const {
+    providers,
+    request,
+    maxRetries,
+    circuitBreaker,
+    healthTracker,
+    onAttempt,
+    onFailure,
+  } = options;
 
   const attemptedProviders: ModelProvider[] = [];
+  const skippedProviders: ModelProvider[] = [];
   const errors: Array<{ provider: ModelProvider; error: string }> = [];
 
   for (const provider of providers) {
+    // Circuit breaker check — skip providers that are down
+    if (circuitBreaker && !circuitBreaker.canRequest(provider)) {
+      skippedProviders.push(provider);
+      errors.push({
+        provider,
+        error: "Circuit breaker open — provider temporarily disabled",
+      });
+      continue;
+    }
+
     attemptedProviders.push(provider);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -45,16 +70,24 @@ export async function executeWithFallback(
 
       try {
         const adapter = getAdapter(provider);
+        const start = performance.now();
 
         // Apply timeout if specified
         const response = request.timeoutMs
           ? await withTimeout(adapter.complete(request), request.timeoutMs)
           : await adapter.complete(request);
 
+        const latency = performance.now() - start;
+
+        // Record success in circuit breaker and health tracker
+        circuitBreaker?.recordSuccess(provider);
+        healthTracker?.recordSuccess(provider, latency);
+
         return {
           response,
-          fallbackUsed: attemptedProviders.length > 1,
+          fallbackUsed: attemptedProviders.length > 1 || skippedProviders.length > 0,
           attemptedProviders,
+          skippedProviders,
           errors,
         };
       } catch (err) {
@@ -64,8 +97,13 @@ export async function executeWithFallback(
         onFailure?.(provider, error);
         errors.push({ provider, error: error.message });
 
-        // Only retry on the same provider for transient errors
+        // Always record in health tracker (per-attempt granularity is useful for latency stats)
+        healthTracker?.recordError(provider);
+
+        // Only record in circuit breaker once per provider (after all retries exhausted),
+        // not per-retry, to avoid prematurely tripping the breaker on transient errors
         if (!isTransient(error) || attempt === maxRetries) {
+          circuitBreaker?.recordFailure(provider);
           break;
         }
 
