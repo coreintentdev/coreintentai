@@ -138,6 +138,30 @@ export class SignalGenerator {
       throw new Error("No valid signals produced by any model");
     }
 
+    // If not all models produced valid results, consensus is degraded
+    if (signals.length < responses.length) {
+      const actionScores: Record<string, number> = {
+        strong_buy: 2, buy: 1, hold: 0, sell: -1, strong_sell: -2,
+      };
+      const avgScore =
+        signals.reduce((sum, s) => sum + actionScores[s.action], 0) /
+        signals.length;
+      let consensusAction: string;
+      if (avgScore >= 1.5) consensusAction = "strong_buy";
+      else if (avgScore >= 0.5) consensusAction = "buy";
+      else if (avgScore > -0.5) consensusAction = "hold";
+      else if (avgScore > -1.5) consensusAction = "sell";
+      else consensusAction = "strong_sell";
+
+      return {
+        signals,
+        consensusAction,
+        averageConfidence:
+          signals.reduce((sum, s) => sum + s.confidence, 0) / signals.length,
+        agreement: 0,
+      };
+    }
+
     const actionScores: Record<string, number> = {
       strong_buy: 2,
       buy: 1,
