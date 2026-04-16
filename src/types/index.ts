@@ -33,6 +33,7 @@ export type TaskIntent =
   | "sentiment"      // Market sentiment — Grok primary, Claude fallback
   | "signal"         // Trade signal generation — Claude primary
   | "risk"           // Risk assessment — Claude primary
+  | "anomaly"        // Market anomaly detection — Claude primary, Grok fallback
   | "general";       // Default — use configured primary
 
 export interface OrchestrationRequest {
@@ -178,6 +179,54 @@ export const RiskAssessmentSchema = z.object({
 });
 
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
+
+// ---------------------------------------------------------------------------
+// Market Anomaly Detection
+// ---------------------------------------------------------------------------
+
+export const AnomalyType = z.enum([
+  "volume_spike",
+  "volume_drought",
+  "price_gap",
+  "momentum_divergence",
+  "sentiment_divergence",
+  "correlation_break",
+  "volatility_regime_change",
+  "unusual_options_activity",
+  "sector_rotation",
+]);
+
+export const AnomalySeverity = z.enum([
+  "low",       // Worth watching
+  "medium",    // Notable, may require action
+  "high",      // Significant, likely requires action
+  "critical",  // Extreme, immediate attention needed
+]);
+
+export const MarketAnomalySchema = z.object({
+  type: AnomalyType,
+  severity: AnomalySeverity,
+  description: z.string(),
+  detectedValue: z.string(),
+  expectedRange: z.string(),
+  deviationPct: z.number(),
+  potentialCause: z.string(),
+  tradingImplication: z.enum(["bullish", "bearish", "neutral", "uncertain"]),
+});
+
+export type MarketAnomaly = z.infer<typeof MarketAnomalySchema>;
+
+export const AnomalyResultSchema = z.object({
+  ticker: z.string(),
+  anomalies: z.array(MarketAnomalySchema),
+  overallAlert: AnomalySeverity,
+  anomalyCount: z.number().min(0),
+  marketContext: z.string(),
+  recommendations: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type AnomalyResult = z.infer<typeof AnomalyResultSchema>;
 
 // ---------------------------------------------------------------------------
 // Agent System

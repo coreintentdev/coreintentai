@@ -45,6 +45,10 @@ const ROUTE_TABLE: Record<TaskIntent, RouteConfig> = {
     primary: "claude",
     fallbacks: ["grok"],
   },
+  anomaly: {
+    primary: "claude",
+    fallbacks: ["grok", "perplexity"],
+  },
   general: {
     primary: "claude",
     fallbacks: ["grok", "perplexity"],

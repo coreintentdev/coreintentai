@@ -89,6 +89,7 @@ function isTransient(error: Error): boolean {
   const msg = error.message.toLowerCase();
   return (
     msg.includes("timeout") ||
+    msg.includes("timed out") ||
     msg.includes("rate limit") ||
     msg.includes("429") ||
     msg.includes("503") ||

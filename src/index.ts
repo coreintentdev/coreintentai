@@ -37,6 +37,7 @@ export { SentimentAnalyzer } from "./capabilities/sentiment/index.js";
 export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
+export { AnomalyDetector } from "./capabilities/anomaly/index.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -75,6 +76,8 @@ export type {
   SentimentResult,
   TradingSignal,
   RiskAssessment,
+  MarketAnomaly,
+  AnomalyResult,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -86,4 +89,8 @@ export {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  AnomalyResultSchema,
+  MarketAnomalySchema,
+  AnomalyType,
+  AnomalySeverity,
 } from "./types/index.js";

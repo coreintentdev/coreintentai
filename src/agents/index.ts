@@ -57,7 +57,7 @@ export async function runTradingPipeline(params: {
 
   // Step 3: Execution planning (uses both analysis and risk)
   const execResult = await team.executor.execute(
-    `Generate execution plan based on:\n\nAnalysis:\n${analysisResult.output.slice(0, 1500)}\n\nRisk Assessment:\n${riskResult.output.slice(0, 1500)}`,
+    `Generate execution plan based on:\n\nAnalysis:\n${analysisResult.output}\n\nRisk Assessment:\n${riskResult.output}`,
     {
       portfolioValue: params.portfolioValue ?? 100_000,
       riskTolerancePct: params.riskTolerancePct ?? 1,
