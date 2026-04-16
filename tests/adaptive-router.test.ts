@@ -44,6 +44,32 @@ describe("AdaptiveRouter", () => {
   });
 
   describe("adaptive scoring", () => {
+    it("promotes a faster provider even when static primary is slower", () => {
+      // Static primary for reasoning is Claude.
+      for (let i = 0; i < 5; i++) {
+        router.record({
+          provider: "claude",
+          intent: "reasoning",
+          latencyMs: 3000,
+          success: true,
+          totalTokens: 500,
+        });
+      }
+
+      for (let i = 0; i < 5; i++) {
+        router.record({
+          provider: "grok",
+          intent: "reasoning",
+          latencyMs: 200,
+          success: true,
+          totalTokens: 500,
+        });
+      }
+
+      const chain = router.getProviderChain("reasoning");
+      expect(chain[0]).toBe("grok");
+    });
+
     it("promotes a consistently faster provider", () => {
       // Record Claude as slow
       for (let i = 0; i < 5; i++) {
@@ -89,9 +115,9 @@ describe("AdaptiveRouter", () => {
         router.record({
           provider: "grok",
           intent: "signal",
-          latencyMs: 500,
+          latencyMs: 1500,
           success: i < 2, // Only first 2 succeed
-          totalTokens: 400,
+          totalTokens: 700,
         });
       }
 

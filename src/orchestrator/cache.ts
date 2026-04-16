@@ -14,7 +14,11 @@
  *   - Cache is local (in-memory) — no external dependencies.
  */
 
-import type { OrchestrationResponse, TaskIntent } from "../types/index.js";
+import type {
+  ModelProvider,
+  OrchestrationResponse,
+  TaskIntent,
+} from "../types/index.js";
 
 export interface CacheConfig {
   /** Maximum number of entries. Oldest entries evicted when exceeded. Default: 200 */
@@ -71,9 +75,10 @@ export class ResponseCache {
     intent: TaskIntent;
     prompt: string;
     systemPrompt?: string;
+    preferredProvider?: ModelProvider;
   }): string {
     // Simple but effective: hash the concatenated content
-    const raw = `${params.intent}|${params.systemPrompt ?? ""}|${params.prompt}`;
+    const raw = `${params.intent}|${params.systemPrompt ?? ""}|${params.prompt}|${params.preferredProvider ?? ""}`;
     return fastHash(raw);
   }
 
@@ -138,7 +143,15 @@ export class ResponseCache {
    * Check if a key exists and is not expired.
    */
   has(key: string): boolean {
-    return this.get(key) !== undefined;
+    const entry = this.entries.get(key);
+    if (!entry) return false;
+
+    if (Date.now() - entry.createdAt > entry.ttlMs) {
+      this.entries.delete(key);
+      return false;
+    }
+
+    return true;
   }
 
   /**

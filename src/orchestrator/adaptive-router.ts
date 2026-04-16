@@ -70,6 +70,11 @@ type MetricKey = `${ModelProvider}:${TaskIntent}`;
 export class AdaptiveRouter {
   private metrics = new Map<MetricKey, ProviderIntentMetrics>();
   private config: AdaptiveRouterConfig;
+  private static readonly PROVIDERS: ModelProvider[] = [
+    "claude",
+    "grok",
+    "perplexity",
+  ];
 
   constructor(config: Partial<AdaptiveRouterConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -117,17 +122,41 @@ export class AdaptiveRouter {
     }
 
     // Invalidate cached score
-    m.cachedScore = null;
+    for (const [key, metrics] of this.metrics) {
+      if (key.endsWith(`:${params.intent}`)) {
+        metrics.cachedScore = null;
+      }
+    }
+  }
+
+  private getNormalizationBounds(
+    intent: TaskIntent,
+    providers: ModelProvider[] = AdaptiveRouter.PROVIDERS
+  ): { maxLatency: number; maxTokens: number } {
+    let maxLatency = 0;
+    let maxTokens = 0;
+
+    for (const provider of providers) {
+      const m = this.metrics.get(this.key(provider, intent));
+      if (!m) continue;
+
+      for (const obs of m.observations) {
+        if (obs.latencyMs > maxLatency) maxLatency = obs.latencyMs;
+        if (obs.totalTokens > maxTokens) maxTokens = obs.totalTokens;
+      }
+    }
+
+    return {
+      maxLatency: maxLatency || 1,
+      maxTokens: maxTokens || 1,
+    };
   }
 
   /**
    * Compute the composite score for a provider-intent pair.
    * Higher is better. Returns null if insufficient samples.
    */
-  private computeScore(
-    provider: ModelProvider,
-    intent: TaskIntent
-  ): number | null {
+  private computeScore(provider: ModelProvider, intent: TaskIntent): number | null {
     const m = this.getMetrics(provider, intent);
 
     if (m.observations.length < this.config.minSamples) {
@@ -147,17 +176,8 @@ export class AdaptiveRouter {
     let weightedCostSum = 0;
     let totalWeight = 0;
 
-    // Find max values for normalization (across this provider-intent)
-    let maxLatency = 0;
-    let maxTokens = 0;
-    for (const obs of m.observations) {
-      if (obs.latencyMs > maxLatency) maxLatency = obs.latencyMs;
-      if (obs.totalTokens > maxTokens) maxTokens = obs.totalTokens;
-    }
-
-    // Avoid division by zero
-    maxLatency = maxLatency || 1;
-    maxTokens = maxTokens || 1;
+    // Normalize against all providers for this intent so absolute differences matter.
+    const { maxLatency, maxTokens } = this.getNormalizationBounds(intent);
 
     for (let i = 0; i < n; i++) {
       const obs = m.observations[i];

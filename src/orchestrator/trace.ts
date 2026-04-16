@@ -180,8 +180,14 @@ export const globalTraceRegistry = new TraceRegistry();
 /**
  * Create a new trace context with global listeners attached.
  */
-export function createTrace(traceId?: string): TraceContext {
-  return new TraceContext(traceId, globalTraceRegistry.getListeners());
+export function createTrace(
+  traceId?: string,
+  listeners: TraceListener[] = []
+): TraceContext {
+  return new TraceContext(traceId, [
+    ...globalTraceRegistry.getListeners(),
+    ...listeners,
+  ]);
 }
 
 /**

@@ -248,6 +248,56 @@ describe("Orchestrator Integration", () => {
       expect(result.provider).toBe("claude");
       expect(mockGrok.complete).not.toHaveBeenCalled();
     });
+
+    it("checks circuit availability once per provider during filtering", async () => {
+      const orch = new Orchestrator({
+        cacheEnabled: false,
+        circuitBreakerEnabled: true,
+        adaptiveRoutingEnabled: false,
+      });
+      const originalCanAttempt = orch.circuitBreaker.canAttempt.bind(
+        orch.circuitBreaker
+      );
+      const canAttemptSpy = vi
+        .spyOn(orch.circuitBreaker, "canAttempt")
+        .mockImplementation((provider) => originalCanAttempt(provider));
+
+      mockPerplexity.complete.mockResolvedValue(
+        mockResponse("perplexity", "Research via Perplexity")
+      );
+
+      await orch.execute({
+        intent: "research",
+        prompt: "NVDA latest catalysts",
+      });
+
+      // Static research chain: perplexity -> grok -> claude
+      expect(canAttemptSpy).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe("tracing", () => {
+    it("emits events to instance-level trace listeners", async () => {
+      const listener = vi.fn();
+      mockClaude.complete.mockResolvedValue(mockResponse("claude", "Traced"));
+
+      const orch = new Orchestrator({
+        cacheEnabled: false,
+        circuitBreakerEnabled: false,
+        adaptiveRoutingEnabled: false,
+        traceListeners: [listener],
+      });
+
+      await orch.execute({
+        intent: "reasoning",
+        prompt: "Trace this request",
+      });
+
+      expect(listener).toHaveBeenCalled();
+      const events = listener.mock.calls.map(([event]) => event.event);
+      expect(events).toContain("request_start");
+      expect(events).toContain("request_complete");
+    });
   });
 
   describe("lifecycle hooks", () => {
@@ -344,6 +394,35 @@ describe("Orchestrator Integration", () => {
       expect(results).toHaveLength(2);
       expect(results.map((r) => r.provider)).toContain("claude");
       expect(results.map((r) => r.provider)).toContain("grok");
+    });
+
+    it("keeps provider-specific cache entries distinct across consensus requests", async () => {
+      mockClaude.complete.mockResolvedValue(
+        mockResponse("claude", "Claude says bullish")
+      );
+      mockGrok.complete.mockResolvedValue(
+        mockResponse("grok", "Grok says neutral")
+      );
+
+      const orch = new Orchestrator({
+        cacheEnabled: true,
+        circuitBreakerEnabled: false,
+        adaptiveRoutingEnabled: false,
+      });
+
+      await orch.consensus(
+        { intent: "sentiment", prompt: "AAPL outlook" },
+        ["claude", "grok"]
+      );
+      const cachedResults = await orch.consensus(
+        { intent: "sentiment", prompt: "AAPL outlook" },
+        ["claude", "grok"]
+      );
+
+      expect(cachedResults).toHaveLength(2);
+      expect(new Set(cachedResults.map((r) => r.provider))).toEqual(
+        new Set(["claude", "grok"])
+      );
     });
   });
 });

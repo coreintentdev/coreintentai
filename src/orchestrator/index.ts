@@ -33,7 +33,7 @@ import type { CacheConfig } from "./cache.js";
 import { AdaptiveRouter } from "./adaptive-router.js";
 import type { AdaptiveRouterConfig } from "./adaptive-router.js";
 import { createTrace } from "./trace.js";
-import type { TraceContext, TraceListener } from "./trace.js";
+import type { TraceListener } from "./trace.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
@@ -105,11 +105,7 @@ export class Orchestrator {
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
-    const trace = createTrace();
-    for (const l of this.traceListeners) {
-      // Emit events to instance-level listeners too
-      trace.getEvents(); // no-op to ensure trace is initialized
-    }
+    const trace = createTrace(undefined, this.traceListeners);
 
     trace.emit("request_start", { intent: request.intent });
 
@@ -129,9 +125,7 @@ export class Orchestrator {
       const available = providers.filter((p) =>
         this.circuitBreaker.canAttempt(p)
       );
-      const skipped = providers.filter(
-        (p) => !this.circuitBreaker.canAttempt(p)
-      );
+      const skipped = providers.filter((p) => !available.includes(p));
       for (const p of skipped) {
         trace.emit("circuit_open", { provider: p });
       }
@@ -158,6 +152,7 @@ export class Orchestrator {
         intent: request.intent,
         prompt: request.prompt,
         systemPrompt: request.systemPrompt,
+        preferredProvider: request.preferredProvider,
       });
 
       const cached = this.cache.get(cacheKey);
@@ -277,6 +272,7 @@ export class Orchestrator {
           intent: request.intent,
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
+          preferredProvider: request.preferredProvider,
         });
         this.cache.set(cacheKey, response, request.intent);
       }
