@@ -175,7 +175,7 @@ describe("Prompt Engineering", () => {
         query: "Summary",
         depth: "deep",
       });
-      expect(quick).toContain("brief");
+      expect(quick).toContain("focused");
       expect(deep).toContain("comprehensive");
     });
 

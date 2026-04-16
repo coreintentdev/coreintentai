@@ -36,7 +36,16 @@ export {
 export { SentimentAnalyzer } from "./capabilities/sentiment/index.js";
 export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
-export { MarketResearcher } from "./capabilities/research/index.js";
+export {
+  MarketResearcher,
+  RESEARCH_SYSTEM_PROMPT,
+  RESEARCH_SYNTHESIS_PROMPT,
+} from "./capabilities/research/index.js";
+
+// ---------------------------------------------------------------------------
+// Telemetry & Observability
+// ---------------------------------------------------------------------------
+export { Telemetry } from "./telemetry/index.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -75,6 +84,9 @@ export type {
   SentimentResult,
   TradingSignal,
   RiskAssessment,
+  ResearchResult,
+  ResearchSource,
+  ResearchSection,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -86,4 +98,20 @@ export {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  ResearchResultSchema,
+  ResearchSourceSchema,
+  ResearchSectionSchema,
 } from "./types/index.js";
+
+export type {
+  TelemetryEvents,
+  RouteEvent,
+  AttemptEvent,
+  SuccessEvent,
+  FallbackEvent,
+  ErrorEvent,
+  CircuitEvent,
+  HealthReport,
+  ProviderHealth,
+  CircuitBreakerConfig,
+} from "./telemetry/index.js";
