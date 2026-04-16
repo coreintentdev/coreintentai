@@ -102,7 +102,7 @@ export function historicalVaR(
   const varReturn = sorted[Math.max(index, 0)];
 
   // VaR is expressed as a positive number (the loss)
-  return Math.abs(varReturn) * portfolioValue;
+  return Math.abs(Math.min(varReturn, 0)) * portfolioValue;
 }
 
 /**
@@ -155,7 +155,7 @@ export function conditionalVaR(
   const avgTailReturn =
     tailReturns.reduce((sum, r) => sum + r, 0) / tailReturns.length;
 
-  return Math.abs(avgTailReturn) * portfolioValue;
+  return Math.abs(Math.min(avgTailReturn, 0)) * portfolioValue;
 }
 
 // ---------------------------------------------------------------------------
@@ -209,7 +209,7 @@ export function sortinoRatio(params: {
 
   const downsideDev = Math.sqrt(
     downsideReturns.reduce((sum, r) => sum + (r - mar) ** 2, 0) /
-      downsideReturns.length
+      returns.length
   );
 
   if (downsideDev === 0) return Infinity;

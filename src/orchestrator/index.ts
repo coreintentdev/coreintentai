@@ -67,6 +67,7 @@ export class Orchestrator {
     // Check cache first
     if (this.options.cacheEnabled) {
       const cacheKey = ResponseCache.buildKey({
+        provider: request.preferredProvider,
         intent: request.intent,
         prompt: request.prompt,
         systemPrompt: request.systemPrompt,
@@ -124,6 +125,7 @@ export class Orchestrator {
       // Store in cache
       if (this.options.cacheEnabled) {
         const cacheKey = ResponseCache.buildKey({
+          provider: request.preferredProvider,
           intent: request.intent,
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
