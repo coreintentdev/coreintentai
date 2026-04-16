@@ -41,7 +41,8 @@ OUTPUT FORMAT: Respond ONLY with valid JSON matching this schema:
   "risks": ["<risk 1>", "<risk 2>"],
   "sources": [{ "title": "<source>", "url": "<url>", "relevance": "high" | "medium" | "low" }],
   "dataFreshness": "real_time" | "recent" | "dated" | "unknown",
-  "overallConfidence": <0.0-1.0>
+  "overallConfidence": <0.0-1.0>,
+  "timestamp": "<ISO 8601 datetime>"
 }`;
 
 export const RESEARCH_SYNTHESIS_PROMPT = `You are CoreIntent AI — a sovereign research synthesizer.
@@ -50,7 +51,34 @@ ROLE: Synthesize multiple research inputs into a single, structured report.
 You will receive web-grounded research AND analytical reasoning. Combine them
 into a unified view, resolving contradictions and noting where sources agree.
 
-OUTPUT FORMAT: Respond ONLY with valid JSON matching the standard research schema.
+OUTPUT FORMAT: Respond ONLY with valid JSON matching this schema:
+{
+  "ticker": "<symbol or null>",
+  "query": "<original research question>",
+  "summary": "<2-4 sentence executive summary, noting any contradictions between inputs>",
+  "sections": [
+    {
+      "heading": "<section title>",
+      "content": "<synthesized findings>",
+      "confidence": <0.0-1.0>,
+      "sources": [{ "title": "<source>", "url": "<url>", "relevance": "high" | "medium" | "low" }]
+    }
+  ],
+  "catalysts": [
+    {
+      "event": "<catalyst description>",
+      "expectedDate": "<date or null>",
+      "impact": "positive" | "negative" | "uncertain",
+      "magnitude": "high" | "medium" | "low"
+    }
+  ],
+  "risks": ["<risk 1>", "<risk 2>"],
+  "sources": [{ "title": "<source>", "url": "<url>", "relevance": "high" | "medium" | "low" }],
+  "dataFreshness": "real_time" | "recent" | "dated" | "unknown",
+  "overallConfidence": <0.0-1.0>,
+  "timestamp": "<ISO 8601 datetime>"
+}
+
 Merge sources from all inputs. Flag any contradictions in the summary. Set
 overallConfidence based on the quality and agreement of the combined inputs.`;
 

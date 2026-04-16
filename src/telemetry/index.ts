@@ -200,6 +200,10 @@ export class Telemetry {
     const m = this.getMetrics(provider);
     m.successes++;
     m.latencies.push(latencyMs);
+    // Cap latencies to window size to prevent unbounded memory growth
+    if (m.latencies.length > this.circuitConfig.windowSize) {
+      m.latencies.shift();
+    }
     m.totalTokens += tokenUsage.totalTokens;
     m.lastSuccess = new Date().toISOString();
 
@@ -317,7 +321,7 @@ export class Telemetry {
           : 0,
       p95LatencyMs:
         sortedLatencies.length > 0
-          ? sortedLatencies[Math.floor(sortedLatencies.length * 0.95)] ?? 0
+          ? sortedLatencies[Math.ceil(sortedLatencies.length * 0.95) - 1] ?? 0
           : 0,
       totalRequests: total,
       totalFailures: m.failures,
@@ -437,7 +441,20 @@ export class Telemetry {
     const failureRate = this.getFailureRate(provider);
     const window = this.recentResults.get(provider) ?? [];
 
-    // Need enough data points before tripping
+    // If half-open and a failure occurs, re-open the circuit immediately
+    if (m.circuitState === "half_open") {
+      m.circuitState = "open";
+      m.circuitOpenedAt = Date.now();
+
+      this.emit("circuit_open", {
+        provider,
+        failureRate,
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // Need enough data points before tripping from closed
     if (window.length < this.circuitConfig.failureThreshold) return;
 
     if (

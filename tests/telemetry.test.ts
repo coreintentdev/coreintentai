@@ -139,6 +139,31 @@ describe("Telemetry", () => {
       expect(health.status).toBe("unhealthy");
     });
 
+    it("caps latency window to prevent unbounded growth", () => {
+      const tel = new Telemetry({ windowSize: 5 });
+
+      // Record 10 latencies — only last 5 should be kept
+      for (let i = 1; i <= 10; i++) {
+        tel.recordSuccess("claude", i * 100, tokens);
+      }
+
+      const health = tel.getProviderHealth("claude");
+      // Avg of last 5: (600+700+800+900+1000)/5 = 800
+      expect(health.avgLatencyMs).toBe(800);
+    });
+
+    it("computes correct p95 latency", () => {
+      // Record 20 latencies: 10, 20, 30, ..., 200
+      const tel = new Telemetry({ windowSize: 100 });
+      for (let i = 1; i <= 20; i++) {
+        tel.recordSuccess("grok", i * 10, tokens);
+      }
+
+      const health = tel.getProviderHealth("grok");
+      // ceil(20 * 0.95) - 1 = ceil(19) - 1 = 18 → sorted[18] = 190
+      expect(health.p95LatencyMs).toBe(190);
+    });
+
     it("tracks lastSuccess and lastFailure timestamps", () => {
       telemetry.recordSuccess("claude", 100, tokens);
       telemetry.recordFailure("claude", "error");
@@ -244,6 +269,36 @@ describe("Telemetry", () => {
 
       expect(tel.getProviderHealth("claude").circuitState).toBe("closed");
       expect(handler).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it("re-opens circuit on failure during half_open state", () => {
+      const tel = new Telemetry({
+        failureThreshold: 2,
+        failureRateThreshold: 0.5,
+        windowSize: 4,
+        resetTimeoutMs: 100,
+      });
+
+      const handler = vi.fn();
+      tel.on("circuit_open", handler);
+
+      tel.recordFailure("claude", "error 1");
+      tel.recordFailure("claude", "error 2");
+
+      vi.useFakeTimers();
+      vi.advanceTimersByTime(150);
+      tel.isProviderAvailable("claude"); // triggers half_open
+      expect(tel.getProviderHealth("claude").circuitState).toBe("half_open");
+
+      // Failure during half_open should re-open
+      tel.recordFailure("claude", "still broken");
+
+      expect(tel.getProviderHealth("claude").circuitState).toBe("open");
+      expect(tel.isProviderAvailable("claude")).toBe(false);
+      // First open + re-open = 2 events
+      expect(handler).toHaveBeenCalledTimes(2);
 
       vi.useRealTimers();
     });
