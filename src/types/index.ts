@@ -180,6 +180,50 @@ export const RiskAssessmentSchema = z.object({
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
 
 // ---------------------------------------------------------------------------
+// Market Research
+// ---------------------------------------------------------------------------
+
+export const ResearchSourceSchema = z.object({
+  title: z.string(),
+  url: z.string().optional(),
+  publishedDate: z.string().optional(),
+  relevance: z.enum(["high", "medium", "low"]),
+});
+
+export const ResearchSectionSchema = z.object({
+  heading: z.string(),
+  content: z.string(),
+  confidence: z.number().min(0).max(1),
+  sources: z.array(ResearchSourceSchema).optional(),
+});
+
+export const ResearchResultSchema = z.object({
+  ticker: z.string().optional(),
+  query: z.string(),
+  summary: z.string(),
+  sections: z.array(ResearchSectionSchema),
+  catalysts: z
+    .array(
+      z.object({
+        event: z.string(),
+        expectedDate: z.string().optional(),
+        impact: z.enum(["positive", "negative", "uncertain"]),
+        magnitude: z.enum(["high", "medium", "low"]),
+      })
+    )
+    .optional(),
+  risks: z.array(z.string()).optional(),
+  sources: z.array(ResearchSourceSchema),
+  dataFreshness: z.enum(["real_time", "recent", "dated", "unknown"]),
+  overallConfidence: z.number().min(0).max(1),
+  timestamp: z.string().datetime(),
+});
+
+export type ResearchResult = z.infer<typeof ResearchResultSchema>;
+export type ResearchSource = z.infer<typeof ResearchSourceSchema>;
+export type ResearchSection = z.infer<typeof ResearchSectionSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
