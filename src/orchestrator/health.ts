@@ -72,6 +72,10 @@ export class ProviderHealthMonitor {
     m.consecutiveFailures++;
     m.lastFailureAt = Date.now();
 
+    if (m.circuitState === "open") {
+      return;
+    }
+
     if (m.circuitState === "half_open") {
       const probes = (this.halfOpenProbes.get(provider) ?? 0) + 1;
       this.halfOpenProbes.set(provider, probes);

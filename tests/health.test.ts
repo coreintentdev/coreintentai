@@ -99,6 +99,23 @@ describe("ProviderHealthMonitor", () => {
       expect(snapshot.state).toBe("closed");
     });
 
+    it("does not reset cool-down timer on straggler failures while open", async () => {
+      monitor.recordSuccess("grok", 100);
+      monitor.recordFailure("grok");
+      monitor.recordFailure("grok");
+      expect(monitor.getSnapshot("grok").state).toBe("open");
+
+      // Straggler failures arrive while circuit is open — should not reset timer
+      monitor.recordFailure("grok");
+      monitor.recordFailure("grok");
+      expect(monitor.getSnapshot("grok").state).toBe("open");
+
+      // Original cool-down should still expire on schedule
+      await new Promise((r) => setTimeout(r, 1100));
+      expect(monitor.isAvailable("grok")).toBe(true);
+      expect(monitor.getSnapshot("grok").state).toBe("half_open");
+    });
+
     it("re-opens circuit on repeated failures during half_open", async () => {
       monitor.recordSuccess("grok", 100);
       monitor.recordFailure("grok");
