@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { ProviderHealthMonitor } from "../src/orchestrator/health.js";
 
 describe("ProviderHealthMonitor", () => {
@@ -112,6 +112,27 @@ describe("ProviderHealthMonitor", () => {
 
       const snapshot = monitor.getSnapshot("grok");
       expect(snapshot.state).toBe("open");
+    });
+
+    it("does not reset the cool-down timer when failures occur while open", () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date("2025-01-01T00:00:00.000Z"));
+
+        monitor.recordSuccess("grok", 100);
+        monitor.recordFailure("grok");
+        monitor.recordFailure("grok");
+        expect(monitor.getSnapshot("grok").state).toBe("open");
+
+        vi.advanceTimersByTime(900);
+        monitor.recordFailure("grok");
+
+        vi.advanceTimersByTime(200);
+        expect(monitor.isAvailable("grok")).toBe(true);
+        expect(monitor.getSnapshot("grok").state).toBe("half_open");
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

@@ -83,6 +83,10 @@ export class ProviderHealthMonitor {
       return;
     }
 
+    if (m.circuitState === "open") {
+      return;
+    }
+
     const total = m.successes + m.failures;
     if (
       total >= this.options.minSamplesForStats &&
