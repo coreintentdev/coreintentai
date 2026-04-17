@@ -19,6 +19,22 @@ export {
 } from "./orchestrator/fallback.js";
 
 // ---------------------------------------------------------------------------
+// Provider Health & Adaptive Routing
+// ---------------------------------------------------------------------------
+export { ProviderHealthMonitor } from "./orchestrator/health.js";
+export type {
+  ProviderHealthSnapshot,
+  CircuitState,
+  HealthMonitorOptions,
+} from "./orchestrator/health.js";
+export { AdaptiveRouter } from "./orchestrator/adaptive-router.js";
+export type {
+  ProviderScore,
+  AdaptiveRouteConfig,
+  AdaptiveRouterOptions,
+} from "./orchestrator/adaptive-router.js";
+
+// ---------------------------------------------------------------------------
 // Model Adapters
 // ---------------------------------------------------------------------------
 export {
@@ -37,6 +53,7 @@ export { SentimentAnalyzer } from "./capabilities/sentiment/index.js";
 export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
+export { RegimeDetector } from "./capabilities/regime/index.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -44,10 +61,12 @@ export { MarketResearcher } from "./capabilities/research/index.js";
 export {
   createAgentTeam,
   runTradingPipeline,
+  runFullPipeline,
   BaseAgent,
   MarketAnalystAgent,
   RiskManagerAgent,
   TradeExecutorAgent,
+  StrategySynthesizerAgent,
 } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
@@ -75,6 +94,11 @@ export type {
   SentimentResult,
   TradingSignal,
   RiskAssessment,
+  RegimeDetection,
+  RegimeCharacteristics,
+  StrategyAdjustments,
+  RegimeTransition,
+  StrategySynthesis,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -86,4 +110,14 @@ export {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  RegimeDetectionSchema,
+  RegimeTransitionSchema,
+  StrategySynthesisSchema,
+  RegimeCharacteristicsSchema,
+  StrategyAdjustmentsSchema,
+  MarketRegime,
+  VolatilityLevel,
+  MomentumBias,
+  MarketBreadth,
+  RiskAppetite,
 } from "./types/index.js";
