@@ -22,7 +22,7 @@ function envInt(key: string, fallback: number): number {
 
 export const CLAUDE_CONFIG: ModelConfig = {
   provider: "claude",
-  model: env("CLAUDE_MODEL", "claude-sonnet-4-20250514"),
+  model: env("CLAUDE_MODEL", "claude-sonnet-4-6"),
   apiKey: env("ANTHROPIC_API_KEY", ""),
   maxTokens: 4096,
   temperature: 0.3,

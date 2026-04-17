@@ -122,3 +122,7 @@ export class Orchestrator {
 
 export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+export { ProviderHealthMonitor } from "./health.js";
+export type { ProviderHealthSnapshot, CircuitState, HealthMonitorOptions } from "./health.js";
+export { AdaptiveRouter } from "./adaptive-router.js";
+export type { ProviderScore, AdaptiveRouteConfig, AdaptiveRouterOptions } from "./adaptive-router.js";

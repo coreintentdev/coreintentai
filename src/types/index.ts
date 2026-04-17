@@ -216,6 +216,110 @@ export interface AgentResult {
 }
 
 // ---------------------------------------------------------------------------
+// Market Regime Detection
+// ---------------------------------------------------------------------------
+
+export const MarketRegime = z.enum([
+  "trending_bull",
+  "trending_bear",
+  "ranging",
+  "high_volatility",
+  "crisis",
+  "recovery",
+]);
+
+export const VolatilityLevel = z.enum(["low", "normal", "elevated", "extreme"]);
+export const MomentumBias = z.enum(["bullish", "bearish", "neutral"]);
+export const MarketBreadth = z.enum(["strong", "moderate", "weak", "divergent"]);
+export const RiskAppetite = z.enum(["risk_on", "neutral", "risk_off", "panic"]);
+
+export const RegimeCharacteristicsSchema = z.object({
+  trendStrength: z.number().min(-1).max(1),
+  volatilityLevel: VolatilityLevel,
+  momentumBias: MomentumBias,
+  breadth: MarketBreadth,
+  riskAppetite: RiskAppetite,
+});
+
+export const StrategyAdjustmentsSchema = z.object({
+  positionSizing: z.enum(["increase", "maintain", "reduce", "minimize"]),
+  stopLossWidth: z.enum(["tight", "normal", "wide"]),
+  takeProfitStrategy: z.enum(["aggressive", "standard", "conservative", "trail_tight"]),
+  preferredTimeframes: z.array(z.enum(["scalp", "day", "swing", "position"])),
+  avoidPatterns: z.array(z.string()),
+  favorPatterns: z.array(z.string()),
+});
+
+export const RegimeDetectionSchema = z.object({
+  regime: MarketRegime,
+  confidence: z.number().min(0).max(1),
+  characteristics: RegimeCharacteristicsSchema,
+  indicators: z.array(
+    z.object({
+      name: z.string(),
+      value: z.string(),
+      signal: z.enum(["bullish", "bearish", "neutral"]),
+    })
+  ),
+  strategyAdjustments: StrategyAdjustmentsSchema,
+  summary: z.string(),
+  transitionRisk: z.enum(["low", "moderate", "high"]),
+  timestamp: z.string().datetime(),
+});
+
+export type RegimeDetection = z.infer<typeof RegimeDetectionSchema>;
+export type RegimeCharacteristics = z.infer<typeof RegimeCharacteristicsSchema>;
+export type StrategyAdjustments = z.infer<typeof StrategyAdjustmentsSchema>;
+
+export const RegimeTransitionSchema = z.object({
+  currentRegime: MarketRegime,
+  persistProbability: z.number().min(0).max(1),
+  transitions: z.array(
+    z.object({
+      toRegime: MarketRegime,
+      probability: z.number().min(0).max(1),
+      triggers: z.array(z.string()),
+      timeHorizon: z.enum(["days", "weeks", "months"]),
+    })
+  ),
+  earlyWarningSignals: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type RegimeTransition = z.infer<typeof RegimeTransitionSchema>;
+
+// ---------------------------------------------------------------------------
+// Strategy Synthesis
+// ---------------------------------------------------------------------------
+
+export const StrategySynthesisSchema = z.object({
+  decision: z.enum(["strong_go", "go", "conditional_go", "wait", "no_go"]),
+  confidence: z.number().min(0).max(1),
+  thesis: z.string(),
+  regime: MarketRegime,
+  regimeAlignment: z.number().min(0).max(1),
+  adjustedSignal: z.object({
+    action: z.enum(["strong_buy", "buy", "hold", "sell", "strong_sell"]),
+    positionSizePct: z.number().min(0).max(100),
+    entryStrategy: z.string(),
+    exitStrategy: z.string(),
+    stopLoss: z.string(),
+    timeframe: z.string(),
+  }),
+  riskBudget: z.object({
+    maxLossPct: z.number(),
+    maxPositionPct: z.number(),
+    hedgeRecommendation: z.string().optional(),
+  }),
+  conditions: z.array(z.string()),
+  invalidationCriteria: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type StrategySynthesis = z.infer<typeof StrategySynthesisSchema>;
+
+// ---------------------------------------------------------------------------
 // Pipeline
 // ---------------------------------------------------------------------------
 
