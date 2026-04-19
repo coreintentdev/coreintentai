@@ -7,6 +7,7 @@
 
 import { Orchestrator } from "../../orchestrator/index.js";
 import { TradingSignalSchema, type TradingSignal } from "../../types/index.js";
+import { parseJsonResponse, parseJsonArrayResponse } from "../../utils/json-parser.js";
 import {
   SIGNAL_SYSTEM_PROMPT,
   buildSignalPrompt,
@@ -110,6 +111,7 @@ export class SignalGenerator {
     currentPrice: number;
     timeframe: "scalp" | "day" | "swing" | "position";
     technicalData?: string;
+    providers?: Array<"claude" | "grok" | "perplexity">;
   }): Promise<{
     signals: TradingSignal[];
     consensusAction: string;
@@ -122,7 +124,7 @@ export class SignalGenerator {
         systemPrompt: SIGNAL_SYSTEM_PROMPT,
         prompt: buildSignalPrompt(params),
       },
-      ["claude", "grok"]
+      params.providers ?? ["claude", "grok"]
     );
 
     const signals: TradingSignal[] = [];
@@ -177,22 +179,11 @@ export class SignalGenerator {
 // ---------------------------------------------------------------------------
 
 function parseSignalResponse(content: string): TradingSignal {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-  return TradingSignalSchema.parse(parsed);
+  return parseJsonResponse(content, TradingSignalSchema);
 }
 
 function parseMultiSignalResponse(content: string): TradingSignal[] {
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-  const parsed = JSON.parse(raw);
-
-  if (!Array.isArray(parsed)) {
-    throw new Error("Expected an array of signals");
-  }
-
-  return parsed.map((item: unknown) => TradingSignalSchema.parse(item));
+  return parseJsonArrayResponse(content, TradingSignalSchema);
 }
 
 export { SIGNAL_SYSTEM_PROMPT } from "./prompts.js";

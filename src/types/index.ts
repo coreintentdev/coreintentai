@@ -180,6 +180,56 @@ export const RiskAssessmentSchema = z.object({
 export type RiskAssessment = z.infer<typeof RiskAssessmentSchema>;
 
 // ---------------------------------------------------------------------------
+// Market Regime Detection
+// ---------------------------------------------------------------------------
+
+export const RegimeType = z.enum([
+  "trending_up",
+  "trending_down",
+  "ranging",
+  "volatile_expansion",
+  "compression",
+  "crisis",
+  "rotation",
+]);
+
+export const VolatilityRegime = z.enum(["low", "normal", "elevated", "extreme"]);
+
+export const MarketRegimeSchema = z.object({
+  ticker: z.string(),
+  regime: RegimeType,
+  confidence: z.number().min(0).max(1),
+  volatilityRegime: VolatilityRegime,
+  trendStrength: z.number().min(0).max(1),
+  regimeAge: z.string(),
+  transitionProbability: z.number().min(0).max(1),
+  transitionTargets: z.array(
+    z.object({
+      regime: z.string(),
+      probability: z.number().min(0).max(1),
+      trigger: z.string(),
+    })
+  ),
+  indicators: z.array(
+    z.object({
+      name: z.string(),
+      value: z.string(),
+      signal: z.string(),
+    })
+  ),
+  strategyImplications: z.object({
+    recommended: z.array(z.string()),
+    avoid: z.array(z.string()),
+    positionSizing: z.string(),
+    stopLossApproach: z.string(),
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 

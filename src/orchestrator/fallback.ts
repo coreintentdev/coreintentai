@@ -69,8 +69,9 @@ export async function executeWithFallback(
           break;
         }
 
-        // Exponential backoff between retries on same provider
-        await sleep(Math.min(1000 * 2 ** (attempt - 1), 8000));
+        const baseDelay = Math.min(1000 * 2 ** (attempt - 1), 8000);
+        const jitter = Math.random() * baseDelay * 0.3;
+        await sleep(baseDelay + jitter);
       }
     }
   }
@@ -91,9 +92,13 @@ function isTransient(error: Error): boolean {
     msg.includes("timeout") ||
     msg.includes("rate limit") ||
     msg.includes("429") ||
+    msg.includes("502") ||
     msg.includes("503") ||
     msg.includes("econnreset") ||
-    msg.includes("socket hang up")
+    msg.includes("econnrefused") ||
+    msg.includes("socket hang up") ||
+    msg.includes("network") ||
+    msg.includes("fetch failed")
   );
 }
 

@@ -37,6 +37,16 @@ export { SentimentAnalyzer } from "./capabilities/sentiment/index.js";
 export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
+export { RegimeDetector } from "./capabilities/regime/index.js";
+
+// ---------------------------------------------------------------------------
+// Utilities
+// ---------------------------------------------------------------------------
+export {
+  parseJsonResponse,
+  parseJsonArrayResponse,
+  ParseError,
+} from "./utils/json-parser.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -75,6 +85,7 @@ export type {
   SentimentResult,
   TradingSignal,
   RiskAssessment,
+  MarketRegime,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -86,4 +97,7 @@ export {
   SentimentResultSchema,
   TradingSignalSchema,
   RiskAssessmentSchema,
+  MarketRegimeSchema,
+  RegimeType,
+  VolatilityRegime,
 } from "./types/index.js";

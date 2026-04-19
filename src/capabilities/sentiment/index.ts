@@ -7,6 +7,7 @@
 
 import { Orchestrator } from "../../orchestrator/index.js";
 import { SentimentResultSchema, type SentimentResult } from "../../types/index.js";
+import { parseJsonResponse } from "../../utils/json-parser.js";
 import {
   SENTIMENT_SYSTEM_PROMPT,
   buildSentimentPrompt,
@@ -82,6 +83,7 @@ export class SentimentAnalyzer {
   async consensus(params: {
     ticker: string;
     context?: string;
+    providers?: Array<"claude" | "grok" | "perplexity">;
   }): Promise<{
     results: SentimentResult[];
     aggregateScore: number;
@@ -94,12 +96,21 @@ export class SentimentAnalyzer {
         systemPrompt: SENTIMENT_SYSTEM_PROMPT,
         prompt: buildSentimentPrompt(params),
       },
-      ["claude", "grok"]
+      params.providers ?? ["claude", "grok", "perplexity"]
     );
 
-    const results = await Promise.all(
-      responses.map((r) => parseSentimentResponse(r.content))
-    );
+    const results: SentimentResult[] = [];
+    for (const r of responses) {
+      try {
+        results.push(parseSentimentResponse(r.content));
+      } catch {
+        // Skip unparseable responses in consensus
+      }
+    }
+
+    if (results.length === 0) {
+      throw new Error("No valid sentiment results from any model");
+    }
 
     const scores = results.map((r) => r.score);
     const aggregateScore =
@@ -126,12 +137,7 @@ export class SentimentAnalyzer {
 // ---------------------------------------------------------------------------
 
 function parseSentimentResponse(content: string): SentimentResult {
-  // Extract JSON from possible markdown code fences
-  const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const raw = jsonMatch ? jsonMatch[1].trim() : content.trim();
-
-  const parsed = JSON.parse(raw);
-  return SentimentResultSchema.parse(parsed);
+  return parseJsonResponse(content, SentimentResultSchema);
 }
 
 function scoreToSentiment(score: number): string {
