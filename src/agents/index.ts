@@ -111,7 +111,7 @@ export async function runStrategyPipeline(params: {
 
   // Step 3: Strategy synthesis (resolves conflicts, scores conviction)
   const strategyResult = await team.strategist.execute(params.input, {
-    sentiment: analysisResult.output.slice(0, 2000),
+    research: analysisResult.output.slice(0, 2000),
     risk: riskResult.output.slice(0, 2000),
   });
 

@@ -186,7 +186,7 @@ export class AdaptiveScorer {
     const parseScore = m.parseSuccessRate;
     const intentScore = m.intentScores[intent] ?? 0.5;
     const recencyBonus =
-      Date.now() - m.lastUsed < 300_000 ? 0.05 : 0;
+      Date.now() - m.lastUsed < 300_000 ? 1 : 0;
 
     return (
       successRate * 0.35 +
