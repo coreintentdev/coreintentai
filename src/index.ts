@@ -38,6 +38,17 @@ export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
+export {
+  CorrelationAnalyzer,
+  CorrelationAnalysisSchema,
+  PairCorrelationSchema,
+  PortfolioOptimizationSchema,
+} from "./capabilities/correlation/index.js";
+export type {
+  CorrelationAnalysis,
+  PairCorrelation,
+  PortfolioOptimization,
+} from "./capabilities/correlation/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -49,15 +60,23 @@ export {
 } from "./utils/json-parser.js";
 
 // ---------------------------------------------------------------------------
+// Adaptive Scoring
+// ---------------------------------------------------------------------------
+export { AdaptiveScorer } from "./orchestrator/scorer.js";
+export type { ProviderMetrics } from "./orchestrator/scorer.js";
+
+// ---------------------------------------------------------------------------
 // Agents
 // ---------------------------------------------------------------------------
 export {
   createAgentTeam,
   runTradingPipeline,
+  runStrategyPipeline,
   BaseAgent,
   MarketAnalystAgent,
   RiskManagerAgent,
   TradeExecutorAgent,
+  StrategySynthesizerAgent,
 } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
