@@ -18,12 +18,16 @@ import type {
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
-import { executeWithFallback } from "./fallback.js";
+import { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+import { CircuitBreaker } from "./circuit-breaker.js";
+import { Telemetry } from "../telemetry/index.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  circuitBreaker?: CircuitBreaker;
+  telemetry?: Telemetry;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
@@ -31,12 +35,18 @@ export interface OrchestratorOptions {
 
 export class Orchestrator {
   private options: Required<OrchestratorOptions>;
+  readonly circuitBreaker: CircuitBreaker;
+  readonly telemetry: Telemetry;
 
   constructor(options: OrchestratorOptions = {}) {
+    this.circuitBreaker = options.circuitBreaker ?? new CircuitBreaker();
+    this.telemetry = options.telemetry ?? new Telemetry({ enabled: false });
     this.options = {
       maxRetries: options.maxRetries ?? 2,
       defaultTimeoutMs: options.defaultTimeoutMs ?? 30_000,
       fallbackEnabled: options.fallbackEnabled ?? true,
+      circuitBreaker: this.circuitBreaker,
+      telemetry: this.telemetry,
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
@@ -51,12 +61,17 @@ export class Orchestrator {
       request.preferredProvider
     );
 
-    // If fallback is disabled, only use the primary provider
     const chain = this.options.fallbackEnabled
       ? providers
       : providers.slice(0, 1);
 
     this.options.onRoute(request, chain);
+
+    this.telemetry.emit({
+      type: "request_start",
+      intent: request.intent,
+      metadata: { providers: chain },
+    });
 
     const start = performance.now();
 
@@ -69,13 +84,28 @@ export class Orchestrator {
           timeoutMs: request.timeoutMs ?? this.options.defaultTimeoutMs,
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
+        circuitBreaker: this.circuitBreaker,
       });
+
+      if (result.fallbackUsed) {
+        this.telemetry.emit({
+          type: "fallback_triggered",
+          intent: request.intent,
+          provider: result.response.provider,
+          metadata: {
+            attemptedProviders: result.attemptedProviders,
+            errors: result.errors,
+          },
+        });
+      }
+
+      const latencyMs = Math.round(performance.now() - start);
 
       const response: OrchestrationResponse = {
         content: result.response.content,
         provider: result.response.provider,
         model: result.response.model,
-        latencyMs: Math.round(performance.now() - start),
+        latencyMs,
         tokenUsage: result.response.tokenUsage,
         fallbackUsed: result.fallbackUsed,
         metadata: {
@@ -85,10 +115,30 @@ export class Orchestrator {
         },
       };
 
+      this.telemetry.emit({
+        type: "request_complete",
+        intent: request.intent,
+        provider: result.response.provider,
+        latencyMs,
+        tokenUsage: result.response.tokenUsage,
+      });
+
       this.options.onComplete(response);
       return response;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+
+      const lastProvider = err instanceof CoreIntentAIError && err.providerErrors.length > 0
+        ? err.providerErrors[err.providerErrors.length - 1].provider
+        : chain[0];
+
+      this.telemetry.emit({
+        type: "request_error",
+        intent: request.intent,
+        provider: lastProvider,
+        metadata: { error: err.message },
+      });
+
       this.options.onError(err);
       throw err;
     }
@@ -122,3 +172,5 @@ export class Orchestrator {
 
 export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+export { CircuitBreaker } from "./circuit-breaker.js";
+export { PipelineComposer, PipelineGateError, parallel, conditional } from "./pipeline.js";

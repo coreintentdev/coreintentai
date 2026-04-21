@@ -17,6 +17,13 @@ export {
   executeWithFallback,
   CoreIntentAIError,
 } from "./orchestrator/fallback.js";
+export { CircuitBreaker } from "./orchestrator/circuit-breaker.js";
+export {
+  PipelineComposer,
+  PipelineGateError,
+  parallel,
+  conditional,
+} from "./orchestrator/pipeline.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -38,6 +45,13 @@ export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
+export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
+export { AnomalyDetector } from "./capabilities/anomaly/index.js";
+
+// ---------------------------------------------------------------------------
+// Telemetry
+// ---------------------------------------------------------------------------
+export { Telemetry, getTelemetry, setGlobalTelemetry } from "./telemetry/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -86,6 +100,12 @@ export type {
   TradingSignal,
   RiskAssessment,
   MarketRegime,
+  CorrelationPair,
+  CorrelationMatrix,
+  Anomaly,
+  AnomalyScanResult,
+  TelemetryEvent,
+  TelemetryEventType,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -100,4 +120,10 @@ export {
   MarketRegimeSchema,
   RegimeType,
   VolatilityRegime,
+  CorrelationPairSchema,
+  CorrelationMatrixSchema,
+  AnomalySchema,
+  AnomalyScanResultSchema,
+  AnomalyType,
+  AnomalySeverity,
 } from "./types/index.js";

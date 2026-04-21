@@ -8,11 +8,13 @@
 import type { ModelProvider, TokenUsage } from "../types/index.js";
 import { getAdapter } from "../models/index.js";
 import type { CompletionRequest, CompletionResponse } from "../models/base.js";
+import { CircuitBreaker } from "./circuit-breaker.js";
 
 export interface FallbackOptions {
   providers: ModelProvider[];
   request: CompletionRequest;
   maxRetries: number;
+  circuitBreaker?: CircuitBreaker;
   onAttempt?: (provider: ModelProvider, attempt: number) => void;
   onFailure?: (provider: ModelProvider, error: Error) => void;
 }
@@ -32,12 +34,23 @@ export interface FallbackResult {
 export async function executeWithFallback(
   options: FallbackOptions
 ): Promise<FallbackResult> {
-  const { providers, request, maxRetries, onAttempt, onFailure } = options;
+  const { providers, request, maxRetries, circuitBreaker, onAttempt, onFailure } = options;
+
+  const availableProviders = circuitBreaker
+    ? circuitBreaker.filterAvailable(providers)
+    : providers;
+
+  if (availableProviders.length === 0) {
+    throw new CoreIntentAIError(
+      `All providers circuit-broken: ${providers.join(", ")}`,
+      providers.map((p) => ({ provider: p, error: "circuit breaker open" }))
+    );
+  }
 
   const attemptedProviders: ModelProvider[] = [];
   const errors: Array<{ provider: ModelProvider; error: string }> = [];
 
-  for (const provider of providers) {
+  for (const provider of availableProviders) {
     attemptedProviders.push(provider);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -46,10 +59,11 @@ export async function executeWithFallback(
       try {
         const adapter = getAdapter(provider);
 
-        // Apply timeout if specified
         const response = request.timeoutMs
           ? await withTimeout(adapter.complete(request), request.timeoutMs)
           : await adapter.complete(request);
+
+        circuitBreaker?.recordSuccess(provider);
 
         return {
           response,
@@ -64,7 +78,6 @@ export async function executeWithFallback(
         onFailure?.(provider, error);
         errors.push({ provider, error: error.message });
 
-        // Only retry on the same provider for transient errors
         if (!isTransient(error) || attempt === maxRetries) {
           break;
         }
@@ -74,6 +87,8 @@ export async function executeWithFallback(
         await sleep(baseDelay + jitter);
       }
     }
+
+    circuitBreaker?.recordFailure(provider);
   }
 
   throw new CoreIntentAIError(

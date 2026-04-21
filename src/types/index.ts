@@ -230,6 +230,126 @@ export const MarketRegimeSchema = z.object({
 export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
 
 // ---------------------------------------------------------------------------
+// Cross-Asset Correlation
+// ---------------------------------------------------------------------------
+
+export const CorrelationPairSchema = z.object({
+  tickerA: z.string(),
+  tickerB: z.string(),
+  correlation: z.number().min(-1).max(1),
+  rollingWindow: z.string(),
+  stability: z.number().min(0).max(1),
+  regime: z.enum(["stable", "breaking_down", "strengthening", "regime_dependent"]),
+});
+
+export type CorrelationPair = z.infer<typeof CorrelationPairSchema>;
+
+export const CorrelationMatrixSchema = z.object({
+  tickers: z.array(z.string()),
+  pairs: z.array(CorrelationPairSchema),
+  clusterCount: z.number().int().min(1),
+  clusters: z.array(
+    z.object({
+      id: z.number().int(),
+      tickers: z.array(z.string()),
+      theme: z.string(),
+      intraClusterCorrelation: z.number().min(-1).max(1),
+    })
+  ),
+  diversificationScore: z.number().min(0).max(1),
+  concentrationRisk: z.enum(["low", "moderate", "high", "critical"]),
+  regimeNote: z.string(),
+  recommendations: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type CorrelationMatrix = z.infer<typeof CorrelationMatrixSchema>;
+
+// ---------------------------------------------------------------------------
+// Anomaly Detection
+// ---------------------------------------------------------------------------
+
+export const AnomalyType = z.enum([
+  "volume_spike",
+  "price_gap",
+  "volatility_regime_shift",
+  "correlation_break",
+  "momentum_divergence",
+  "liquidity_vacuum",
+  "unusual_options_activity",
+  "breadth_divergence",
+]);
+
+export const AnomalySeverity = z.enum(["low", "medium", "high", "critical"]);
+
+export const AnomalySchema = z.object({
+  ticker: z.string(),
+  anomalyType: AnomalyType,
+  severity: AnomalySeverity,
+  confidence: z.number().min(0).max(1),
+  description: z.string(),
+  evidence: z.array(
+    z.object({
+      metric: z.string(),
+      observed: z.string(),
+      expected: z.string(),
+      deviationSigma: z.number().min(0),
+    })
+  ),
+  historicalPrecedent: z.string().optional(),
+  tradingImplication: z.enum([
+    "bullish",
+    "bearish",
+    "increased_volatility",
+    "reduced_liquidity",
+    "regime_change",
+    "ambiguous",
+  ]),
+  urgency: z.enum(["monitor", "prepare", "act_now"]),
+  suggestedActions: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type Anomaly = z.infer<typeof AnomalySchema>;
+
+export const AnomalyScanResultSchema = z.object({
+  ticker: z.string(),
+  anomalies: z.array(AnomalySchema),
+  overallAlertLevel: AnomalySeverity,
+  marketCondition: z.string(),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type AnomalyScanResult = z.infer<typeof AnomalyScanResultSchema>;
+
+// ---------------------------------------------------------------------------
+// Telemetry
+// ---------------------------------------------------------------------------
+
+export type TelemetryEventType =
+  | "request_start"
+  | "request_complete"
+  | "request_error"
+  | "fallback_triggered"
+  | "circuit_breaker_open"
+  | "circuit_breaker_close"
+  | "provider_latency"
+  | "capability_invoked"
+  | "pipeline_stage_complete"
+  | "consensus_result";
+
+export interface TelemetryEvent {
+  type: TelemetryEventType;
+  timestamp: string;
+  provider?: ModelProvider;
+  intent?: TaskIntent;
+  latencyMs?: number;
+  tokenUsage?: TokenUsage;
+  metadata?: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
