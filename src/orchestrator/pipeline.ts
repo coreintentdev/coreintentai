@@ -39,8 +39,12 @@ export class PipelineComposer<TFirst, TLast> {
     next.gateChecks = new Map(this.gateChecks);
     next.gateChecks.set(idx, (output) => {
       const pass = (check as (output: unknown) => boolean)(output);
-      if (!pass && failureMessage) {
-        throw new PipelineGateError(failureMessage, this.stages[idx].name, output);
+      if (!pass) {
+        throw new PipelineGateError(
+          failureMessage ?? `Gate failed after stage "${this.stages[idx].name}"`,
+          this.stages[idx].name,
+          output,
+        );
       }
       return pass;
     });
@@ -66,13 +70,8 @@ export class PipelineComposer<TFirst, TLast> {
         });
 
         const gateCheck = this.gateChecks.get(i);
-        if (gateCheck && !gateCheck(current)) {
-          stageResults.push({
-            name: `${stage.name}:gate`,
-            latencyMs: 0,
-            success: false,
-          });
-          break;
+        if (gateCheck) {
+          gateCheck(current);
         }
       } catch (err) {
         stageResults.push({

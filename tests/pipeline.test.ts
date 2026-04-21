@@ -82,18 +82,21 @@ describe("PipelineComposer", () => {
       }
     });
 
-    it("stops pipeline when gate fails without message", async () => {
+    it("throws PipelineGateError with default message when no failureMessage", async () => {
       const pipeline = PipelineComposer.create<number>()
         .pipe("first", async (n) => n)
         .gate((n) => n > 100)
         .pipe("second", async (n) => n * 2);
 
-      const result = await pipeline.execute(5);
-      // Pipeline stops after gate failure, output is the last stage output before the gate stopped
-      expect(result.output).toBe(5);
-      expect(result.stages).toHaveLength(2);
-      expect(result.stages[1].name).toBe("first:gate");
-      expect(result.stages[1].success).toBe(false);
+      try {
+        await pipeline.execute(5);
+        expect.fail("Should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(PipelineGateError);
+        expect((err as PipelineGateError).stageName).toBe("first");
+        expect((err as PipelineGateError).stageOutput).toBe(5);
+        expect((err as PipelineGateError).message).toContain("first");
+      }
     });
   });
 });

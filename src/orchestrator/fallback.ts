@@ -78,8 +78,6 @@ export async function executeWithFallback(
         onFailure?.(provider, error);
         errors.push({ provider, error: error.message });
 
-        circuitBreaker?.recordFailure(provider);
-
         if (!isTransient(error) || attempt === maxRetries) {
           break;
         }
@@ -89,6 +87,8 @@ export async function executeWithFallback(
         await sleep(baseDelay + jitter);
       }
     }
+
+    circuitBreaker?.recordFailure(provider);
   }
 
   throw new CoreIntentAIError(

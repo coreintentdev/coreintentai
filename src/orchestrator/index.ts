@@ -18,7 +18,7 @@ import type {
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
-import { executeWithFallback } from "./fallback.js";
+import { executeWithFallback, CoreIntentAIError } from "./fallback.js";
 import { CircuitBreaker } from "./circuit-breaker.js";
 import { Telemetry } from "../telemetry/index.js";
 
@@ -128,9 +128,14 @@ export class Orchestrator {
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
 
+      const lastProvider = err instanceof CoreIntentAIError && err.providerErrors.length > 0
+        ? err.providerErrors[err.providerErrors.length - 1].provider
+        : chain[0];
+
       this.telemetry.emit({
         type: "request_error",
         intent: request.intent,
+        provider: lastProvider,
         metadata: { error: err.message },
       });
 
