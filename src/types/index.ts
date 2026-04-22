@@ -33,6 +33,8 @@ export type TaskIntent =
   | "sentiment"      // Market sentiment — Grok primary, Claude fallback
   | "signal"         // Trade signal generation — Claude primary
   | "risk"           // Risk assessment — Claude primary
+  | "correlation"    // Cross-asset correlation — Claude primary
+  | "anomaly"        // Anomaly detection — Claude primary
   | "general";       // Default — use configured primary
 
 export interface OrchestrationRequest {
@@ -228,6 +230,107 @@ export const MarketRegimeSchema = z.object({
 });
 
 export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
+
+// ---------------------------------------------------------------------------
+// Cross-Asset Correlation
+// ---------------------------------------------------------------------------
+
+export const CorrelationRelationship = z.enum([
+  "positive",
+  "negative",
+  "leading",
+  "lagging",
+  "coincident",
+  "divergent",
+]);
+
+export const CorrelationAnalysisSchema = z.object({
+  pairs: z.array(
+    z.object({
+      tickerA: z.string(),
+      tickerB: z.string(),
+      correlation: z.number().min(-1).max(1),
+      rollingPeriod: z.string(),
+      historicalAverage: z.number().min(-1).max(1),
+      deviation: z.number(),
+      relationship: CorrelationRelationship,
+      significance: z.number().min(0).max(1),
+    })
+  ),
+  clusters: z.array(
+    z.object({
+      name: z.string(),
+      tickers: z.array(z.string()),
+      avgIntraCorrelation: z.number().min(0).max(1),
+      riskImplication: z.string(),
+    })
+  ),
+  divergences: z.array(
+    z.object({
+      tickerA: z.string(),
+      tickerB: z.string(),
+      expectedRelationship: z.string(),
+      currentRelationship: z.string(),
+      divergenceMagnitude: z.number().min(0).max(1),
+      tradingImplication: z.string(),
+      confidence: z.number().min(0).max(1),
+    })
+  ),
+  regimeContext: z.string(),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type CorrelationAnalysis = z.infer<typeof CorrelationAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
+// Anomaly Detection
+// ---------------------------------------------------------------------------
+
+export const AnomalyType = z.enum([
+  "price_spike",
+  "volume_surge",
+  "volatility_break",
+  "correlation_breakdown",
+  "breadth_divergence",
+  "flow_anomaly",
+  "pattern_break",
+]);
+
+export const AnomalySeverity = z.enum(["low", "medium", "high", "critical"]);
+
+export const AnomalyDetectionSchema = z.object({
+  ticker: z.string(),
+  anomalies: z.array(
+    z.object({
+      type: AnomalyType,
+      severity: AnomalySeverity,
+      description: z.string(),
+      metric: z.string(),
+      expectedValue: z.string(),
+      actualValue: z.string(),
+      deviationSigma: z.number().min(0),
+      possibleCauses: z.array(z.string()),
+      actionableInsight: z.string(),
+    })
+  ),
+  overallAnomalyScore: z.number().min(0).max(100),
+  marketStress: z.number().min(0).max(100),
+  blackSwanProbability: z.number().min(0).max(1),
+  recommendations: z.array(z.string()),
+  historicalParallels: z.array(
+    z.object({
+      event: z.string(),
+      date: z.string(),
+      similarity: z.number().min(0).max(1),
+      outcome: z.string(),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type AnomalyDetection = z.infer<typeof AnomalyDetectionSchema>;
 
 // ---------------------------------------------------------------------------
 // Agent System
