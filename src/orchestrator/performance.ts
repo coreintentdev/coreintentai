@@ -1,21 +1,14 @@
 import type { ModelProvider, TaskIntent, TokenUsage } from "../types/index.js";
 
-interface Observation {
-  provider: ModelProvider;
-  intent: TaskIntent;
+interface TimestampedSample {
   latencyMs: number;
+  tokens: number;
   success: boolean;
-  tokenUsage: TokenUsage;
   timestamp: number;
 }
 
 interface ProviderMetrics {
-  totalRequests: number;
-  successCount: number;
-  failureCount: number;
-  totalLatencyMs: number;
-  totalTokens: number;
-  latencies: number[];
+  samples: TimestampedSample[];
   lastSeen: number;
 }
 
@@ -45,7 +38,7 @@ export interface ProviderRanking {
   }>;
 }
 
-const MAX_LATENCY_SAMPLES = 500;
+const MAX_SAMPLES = 500;
 
 export class PerformanceTracker {
   private intents: Map<TaskIntent, IntentMetrics> = new Map();
@@ -70,32 +63,30 @@ export class PerformanceTracker {
 
     if (!intentMetrics.providers.has(obs.provider)) {
       intentMetrics.providers.set(obs.provider, {
-        totalRequests: 0,
-        successCount: 0,
-        failureCount: 0,
-        totalLatencyMs: 0,
-        totalTokens: 0,
-        latencies: [],
+        samples: [],
         lastSeen: 0,
       });
     }
 
     const metrics = intentMetrics.providers.get(obs.provider)!;
-    metrics.totalRequests++;
-    metrics.totalLatencyMs += obs.latencyMs;
-    metrics.totalTokens += obs.tokenUsage.totalTokens;
     metrics.lastSeen = Date.now();
 
-    if (obs.success) {
-      metrics.successCount++;
-    } else {
-      metrics.failureCount++;
-    }
+    metrics.samples.push({
+      latencyMs: obs.latencyMs,
+      tokens: obs.tokenUsage.totalTokens,
+      success: obs.success,
+      timestamp: metrics.lastSeen,
+    });
 
-    metrics.latencies.push(obs.latencyMs);
-    if (metrics.latencies.length > MAX_LATENCY_SAMPLES) {
-      metrics.latencies.shift();
+    if (metrics.samples.length > MAX_SAMPLES) {
+      metrics.samples.shift();
     }
+  }
+
+  private getActiveSamples(metrics: ProviderMetrics): TimestampedSample[] {
+    const cutoff = Date.now() - this.windowMs;
+    const inWindow = metrics.samples.filter((s) => s.timestamp >= cutoff);
+    return inWindow.length > 0 ? inWindow : metrics.samples;
   }
 
   getReport(
@@ -103,14 +94,19 @@ export class PerformanceTracker {
     intent: TaskIntent
   ): PerformanceReport | null {
     const metrics = this.intents.get(intent)?.providers.get(provider);
-    if (!metrics || metrics.totalRequests === 0) return null;
+    if (!metrics || metrics.samples.length === 0) return null;
 
-    const sorted = [...metrics.latencies].sort((a, b) => a - b);
+    const active = this.getActiveSamples(metrics);
+    const latencies = active.map((s) => s.latencyMs);
+    const sorted = [...latencies].sort((a, b) => a - b);
     const p = (pct: number) => sorted[Math.floor(sorted.length * pct)] ?? 0;
 
-    const successRate = metrics.successCount / metrics.totalRequests;
-    const avgLatencyMs = metrics.totalLatencyMs / metrics.totalRequests;
-    const avgTokens = metrics.totalTokens / metrics.totalRequests;
+    const successCount = active.filter((s) => s.success).length;
+    const successRate = successCount / active.length;
+    const avgLatencyMs =
+      latencies.reduce((s, l) => s + l, 0) / latencies.length;
+    const avgTokens =
+      active.reduce((s, o) => s + o.tokens, 0) / active.length;
 
     const latencyScore = Math.max(0, 1 - avgLatencyMs / 30_000);
     const score = successRate * 0.6 + latencyScore * 0.4;
@@ -124,7 +120,7 @@ export class PerformanceTracker {
       p95LatencyMs: Math.round(p(0.95)),
       p99LatencyMs: Math.round(p(0.99)),
       avgTokensPerRequest: Math.round(avgTokens),
-      totalRequests: metrics.totalRequests,
+      totalRequests: active.length,
       score,
     };
   }
@@ -199,7 +195,7 @@ export class PerformanceTracker {
       let bestProvider: ModelProvider | null = null;
 
       for (const [provider, metrics] of intentMetrics.providers) {
-        totalObservations += metrics.totalRequests;
+        totalObservations += metrics.samples.length;
         providersTracked.add(provider);
         const report = this.getReport(provider, intent);
         if (report && report.score > bestScore) {

@@ -104,7 +104,7 @@ export class CorrelationEngine {
     const pairCorrelations = new Map<string, number[]>();
     for (const result of results) {
       for (const pair of result.pairs) {
-        const key = `${pair.tickerA}:${pair.tickerB}`;
+        const key = [pair.tickerA, pair.tickerB].sort().join(":");
         const existing = pairCorrelations.get(key) ?? [];
         existing.push(pair.correlation);
         pairCorrelations.set(key, existing);
@@ -123,7 +123,7 @@ export class CorrelationEngine {
       }
     }
 
-    const agreement = pairCount > 0 ? totalAgreement / pairCount : 1;
+    const agreement = pairCount > 0 ? totalAgreement / pairCount : 0;
 
     return { results, consensusDivergences, agreement };
   }
