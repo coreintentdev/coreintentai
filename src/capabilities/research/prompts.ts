@@ -58,6 +58,32 @@ For each competitor, assess:
 Conclude with how ${params.ticker} is positioned relative to peers.`;
 }
 
+export function buildSynthesisPrompt(params: {
+  webResearch: string;
+  analysis: string;
+  query: string;
+  ticker?: string;
+}): string {
+  return `Synthesize the following two research perspectives into a unified analysis${params.ticker ? ` for ${params.ticker}` : ""}:
+
+QUERY: ${params.query}
+
+SOURCE 1 — WEB RESEARCH (real-time data, citations):
+${params.webResearch}
+
+SOURCE 2 — ANALYTICAL REASONING (deep analysis):
+${params.analysis}
+
+Produce a unified synthesis that:
+1. Reconciles any contradictions between the two sources
+2. Highlights points where both sources agree (high confidence)
+3. Flags areas where sources disagree (needs further investigation)
+4. Prioritizes actionable insights
+5. Preserves citations from web research
+
+Format as a structured analysis with clear sections.`;
+}
+
 export function buildCatalystResearchPrompt(params: {
   ticker: string;
   timeHorizon: "near_term" | "medium_term" | "long_term";

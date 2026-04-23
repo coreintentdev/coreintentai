@@ -33,6 +33,7 @@ export type TaskIntent =
   | "sentiment"      // Market sentiment — Grok primary, Claude fallback
   | "signal"         // Trade signal generation — Claude primary
   | "risk"           // Risk assessment — Claude primary
+  | "correlation"    // Portfolio correlation & concentration — Claude primary
   | "general";       // Default — use configured primary
 
 export interface OrchestrationRequest {
@@ -228,6 +229,98 @@ export const MarketRegimeSchema = z.object({
 });
 
 export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
+
+// ---------------------------------------------------------------------------
+// Correlation & Concentration Analysis
+// ---------------------------------------------------------------------------
+
+export const ConcentrationRiskType = z.enum([
+  "sector",
+  "factor",
+  "geographic",
+  "thematic",
+  "liquidity",
+]);
+
+export const RebalanceAction = z.enum([
+  "add",
+  "reduce",
+  "hedge",
+  "replace",
+  "maintain",
+]);
+
+export const CorrelationAnalysisSchema = z.object({
+  assets: z.array(z.string()),
+  correlationPairs: z.array(
+    z.object({
+      assetA: z.string(),
+      assetB: z.string(),
+      correlation: z.number().min(-1).max(1),
+      regime: z.enum(["normal", "stress", "crisis"]),
+    })
+  ),
+  clusters: z.array(
+    z.object({
+      name: z.string(),
+      assets: z.array(z.string()),
+      avgCorrelation: z.number().min(-1).max(1),
+      riskContribution: z.number().min(0).max(1),
+      description: z.string(),
+    })
+  ),
+  concentrationRisks: z.array(
+    z.object({
+      type: ConcentrationRiskType,
+      exposure: z.number().min(0).max(1),
+      assets: z.array(z.string()),
+      severity: z.enum(["low", "moderate", "high", "critical"]),
+      description: z.string(),
+    })
+  ),
+  diversificationScore: z.number().min(0).max(100),
+  effectivePositions: z.number().positive(),
+  tailRiskAssessment: z.object({
+    crisisCorrelation: z.number().min(-1).max(1),
+    expectedDrawdownPct: z.number(),
+    vulnerabilities: z.array(z.string()),
+  }),
+  recommendations: z.array(
+    z.object({
+      action: RebalanceAction,
+      asset: z.string().optional(),
+      rationale: z.string(),
+      priority: z.enum(["low", "medium", "high", "urgent"]),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type CorrelationAnalysis = z.infer<typeof CorrelationAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
+// Cost Tracking
+// ---------------------------------------------------------------------------
+
+export interface CostEstimate {
+  provider: ModelProvider;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  inputCostUsd: number;
+  outputCostUsd: number;
+  totalCostUsd: number;
+}
+
+export interface SessionCostSummary {
+  totalCostUsd: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  requestCount: number;
+  costByProvider: Record<string, number>;
+  costByIntent: Record<string, number>;
+}
 
 // ---------------------------------------------------------------------------
 // Agent System

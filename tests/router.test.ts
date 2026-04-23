@@ -37,6 +37,12 @@ describe("Intent Router", () => {
       expect(route.primary).toBe("claude");
     });
 
+    it("routes correlation analysis to Claude", () => {
+      const route = resolveRoute("correlation");
+      expect(route.primary).toBe("claude");
+      expect(route.fallbacks).toContain("grok");
+    });
+
     it("uses Claude as default for general tasks", () => {
       const route = resolveRoute("general");
       expect(route.primary).toBe("claude");
