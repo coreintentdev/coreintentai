@@ -180,7 +180,7 @@ function extractCitations(content: string): string[] {
   }
 
   // Numbered references like [1] Source Name
-  const numberedRefs = content.matchAll(/\[(\d+)\]\s+([^\n]+)/g);
+  const numberedRefs = content.matchAll(/^\[(\d+)\]\s+([^\n]+)/gm);
   for (const match of numberedRefs) {
     const ref = match[2].trim();
     if (ref && !ref.startsWith("(")) {

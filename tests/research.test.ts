@@ -28,6 +28,15 @@ describe("Research — Citation Extraction", () => {
     expect(citations).toContain("JP Morgan Market Analysis");
   });
 
+  it("does not treat inline numbered references as bibliography entries", () => {
+    const content =
+      "Revenue grew 25% [1] while margins expanded. More context is available elsewhere.";
+    const citations = _extractCitations(content);
+    expect(citations).not.toContain(
+      "while margins expanded. More context is available elsewhere."
+    );
+  });
+
   it("deduplicates URLs", () => {
     const content =
       "See [link](https://example.com) and also https://example.com for more.";
