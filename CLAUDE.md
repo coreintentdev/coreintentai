@@ -8,7 +8,7 @@ Based in: New Zealand (NEVER register anything in Australia)
 ## What This Repo IS
 - The **AI intelligence layer** for the CoreIntent trading platform
 - Sovereign multi-model orchestration: Claude, Grok, Perplexity
-- Capabilities: Sentiment analysis, signal generation, risk assessment, agent workflows
+- Capabilities: Sentiment analysis, signal generation, risk assessment, regime detection, agent workflows
 - TypeScript library with Zod-validated outputs
 
 ## What This Repo IS NOT
@@ -38,9 +38,11 @@ src/
 │   ├── sentiment/  # Market sentiment analysis
 │   ├── signals/    # Trading signal generation
 │   ├── risk/       # Risk assessment framework
-│   └── research/   # Web-grounded market research
+│   ├── research/   # Web-grounded market research
+│   └── regime/     # Market regime detection
 ├── agents/         # Autonomous trading intelligence agents
 ├── types/          # Shared TypeScript types + Zod schemas
+├── utils/          # Shared utilities (robust JSON parser)
 └── index.ts        # Public API exports
 ```
 
@@ -50,10 +52,10 @@ src/
 Every request has an `intent` (reasoning, fast_analysis, research, sentiment, signal, risk). The router maps each intent to the optimal model provider with fallback chains.
 
 ### Fallback Chains
-If a provider fails (timeout, rate limit, error), the system automatically falls through to the next provider. Transient errors trigger retries with exponential backoff.
+If a provider fails (timeout, rate limit, error), the system automatically falls through to the next provider. Transient errors trigger retries with exponential backoff (with jitter). Expanded transient error classification: 502, ECONNREFUSED, fetch failures.
 
 ### Structured Output
-All capability outputs are validated with Zod schemas. The AI layer produces typed, parseable data — not free-form text.
+All capability outputs are validated with Zod schemas. The AI layer produces typed, parseable data — not free-form text. A robust JSON parser in `utils/json-parser.ts` handles multiple extraction patterns (raw JSON, markdown fences, embedded JSON) with clear error messages.
 
 ### Agent Pipeline
 Agents (MarketAnalyst → RiskManager → TradeExecutor) chain together for full trading workflows. Each agent is a multi-step reasoning loop.
