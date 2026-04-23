@@ -179,8 +179,8 @@ function extractCitations(content: string): string[] {
     citations.add(match[1]);
   }
 
-  // Numbered references like [1] Source Name
-  const numberedRefs = content.matchAll(/\[(\d+)\]\s+([^\n]+)/g);
+  // Numbered references like [1] Source Name — anchored to line start
+  const numberedRefs = content.matchAll(/^\[(\d+)\]\s+([^\n]+)/gm);
   for (const match of numberedRefs) {
     const ref = match[2].trim();
     if (ref && !ref.startsWith("(")) {

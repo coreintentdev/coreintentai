@@ -58,4 +58,13 @@ See also https://bloomberg.com/data for raw data.
     expect(citations).toContain("http://old-site.com");
     expect(citations).toContain("https://new-site.com");
   });
+
+  it("does not extract inline numbered references as false citations", () => {
+    const content =
+      "As noted in [1] for further details, and see [2] above for context.";
+    const citations = _extractCitations(content);
+    expect(citations).not.toContain("for further details, and see [2] above for context.");
+    expect(citations).not.toContain("above for context.");
+    expect(citations).toEqual([]);
+  });
 });
