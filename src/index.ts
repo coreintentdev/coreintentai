@@ -38,6 +38,14 @@ export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
+export { CorrelationEngine } from "./capabilities/correlation/index.js";
+export { AnomalyDetector } from "./capabilities/anomaly/index.js";
+
+// ---------------------------------------------------------------------------
+// Performance Tracking
+// ---------------------------------------------------------------------------
+export { PerformanceTracker } from "./orchestrator/performance.js";
+export type { PerformanceReport, ProviderRanking } from "./orchestrator/performance.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -86,6 +94,8 @@ export type {
   TradingSignal,
   RiskAssessment,
   MarketRegime,
+  CorrelationAnalysis,
+  AnomalyDetection,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -100,4 +110,9 @@ export {
   MarketRegimeSchema,
   RegimeType,
   VolatilityRegime,
+  CorrelationAnalysisSchema,
+  CorrelationRelationship,
+  AnomalyDetectionSchema,
+  AnomalyType,
+  AnomalySeverity,
 } from "./types/index.js";
