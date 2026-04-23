@@ -11,12 +11,14 @@ import {
   buildResearchPrompt,
   buildCompetitorAnalysisPrompt,
   buildCatalystResearchPrompt,
+  buildSynthesisPrompt,
 } from "./prompts.js";
 
 export interface ResearchResult {
   content: string;
   provider: string;
   latencyMs: number;
+  citations: string[];
 }
 
 export class MarketResearcher {
@@ -44,6 +46,7 @@ export class MarketResearcher {
       content: response.content,
       provider: response.provider,
       latencyMs: response.latencyMs,
+      citations: extractCitations(response.content),
     };
   }
 
@@ -64,6 +67,7 @@ export class MarketResearcher {
       content: response.content,
       provider: response.provider,
       latencyMs: response.latencyMs,
+      citations: extractCitations(response.content),
     };
   }
 
@@ -84,17 +88,22 @@ export class MarketResearcher {
       content: response.content,
       provider: response.provider,
       latencyMs: response.latencyMs,
+      citations: extractCitations(response.content),
     };
   }
 
   /**
-   * Multi-source research: query both Perplexity (web) and Claude (reasoning)
-   * and combine insights.
+   * Multi-source research: query Perplexity (web) and Claude (reasoning)
+   * in parallel, then synthesize into a unified analysis.
    */
   async deepDive(params: {
     query: string;
     ticker?: string;
-  }): Promise<{ webResearch: ResearchResult; analysis: ResearchResult }> {
+  }): Promise<{
+    webResearch: ResearchResult;
+    analysis: ResearchResult;
+    synthesis: ResearchResult;
+  }> {
     const [webResponse, analysisResponse] = await this.orchestrator.fan([
       {
         intent: "research",
@@ -110,19 +119,78 @@ export class MarketResearcher {
       },
     ]);
 
+    const synthesisResponse = await this.orchestrator.execute({
+      intent: "reasoning",
+      systemPrompt: RESEARCH_SYSTEM_PROMPT,
+      prompt: buildSynthesisPrompt({
+        webResearch: webResponse.content.slice(0, 3000),
+        analysis: analysisResponse.content.slice(0, 3000),
+        query: params.query,
+        ticker: params.ticker,
+      }),
+      preferredProvider: "claude",
+    });
+
     return {
       webResearch: {
         content: webResponse.content,
         provider: webResponse.provider,
         latencyMs: webResponse.latencyMs,
+        citations: extractCitations(webResponse.content),
       },
       analysis: {
         content: analysisResponse.content,
         provider: analysisResponse.provider,
         latencyMs: analysisResponse.latencyMs,
+        citations: extractCitations(analysisResponse.content),
+      },
+      synthesis: {
+        content: synthesisResponse.content,
+        provider: synthesisResponse.provider,
+        latencyMs: synthesisResponse.latencyMs,
+        citations: extractCitations(synthesisResponse.content),
       },
     };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract citations/URLs from research content.
+ * Handles common patterns: markdown links, bare URLs, numbered references.
+ */
+function extractCitations(content: string): string[] {
+  const citations = new Set<string>();
+
+  // Markdown links: [text](url)
+  const markdownLinks = content.matchAll(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g);
+  for (const match of markdownLinks) {
+    citations.add(match[2]);
+  }
+
+  // Bare URLs not inside markdown
+  const bareUrls = content.matchAll(
+    /(?<!\()(https?:\/\/[^\s)<>\]]+)/g
+  );
+  for (const match of bareUrls) {
+    citations.add(match[1]);
+  }
+
+  // Numbered references like [1] Source Name — anchored to line start
+  const numberedRefs = content.matchAll(/^\[(\d+)\]\s+([^\n]+)/gm);
+  for (const match of numberedRefs) {
+    const ref = match[2].trim();
+    if (ref && !ref.startsWith("(")) {
+      citations.add(ref);
+    }
+  }
+
+  return [...citations];
+}
+
+export { extractCitations as _extractCitations };
 
 export { RESEARCH_SYSTEM_PROMPT } from "./prompts.js";

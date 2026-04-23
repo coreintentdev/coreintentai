@@ -38,6 +38,7 @@ export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
+export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -47,6 +48,8 @@ export {
   parseJsonArrayResponse,
   ParseError,
 } from "./utils/json-parser.js";
+
+export { CostTracker } from "./utils/cost-tracker.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -86,6 +89,9 @@ export type {
   TradingSignal,
   RiskAssessment,
   MarketRegime,
+  CorrelationAnalysis,
+  CostEstimate,
+  SessionCostSummary,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -98,6 +104,9 @@ export {
   TradingSignalSchema,
   RiskAssessmentSchema,
   MarketRegimeSchema,
+  CorrelationAnalysisSchema,
+  ConcentrationRiskType,
+  RebalanceAction,
   RegimeType,
   VolatilityRegime,
 } from "./types/index.js";

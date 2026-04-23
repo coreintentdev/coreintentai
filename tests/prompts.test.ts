@@ -15,7 +15,12 @@ import {
 import {
   buildResearchPrompt,
   buildCatalystResearchPrompt,
+  buildSynthesisPrompt,
 } from "../src/capabilities/research/prompts.js";
+import {
+  buildCorrelationPrompt,
+  buildStressCorrelationPrompt,
+} from "../src/capabilities/correlation/prompts.js";
 
 describe("Prompt Engineering", () => {
   describe("Sentiment Prompts", () => {
@@ -186,6 +191,55 @@ describe("Prompt Engineering", () => {
       });
       expect(prompt).toContain("TSLA");
       expect(prompt).toContain("1-4 weeks");
+    });
+
+    it("builds synthesis prompt combining web and analysis", () => {
+      const prompt = buildSynthesisPrompt({
+        webResearch: "Latest data shows NVDA revenue up 200%...",
+        analysis: "Deep analysis indicates strong positioning...",
+        query: "NVDA growth trajectory",
+        ticker: "NVDA",
+      });
+      expect(prompt).toContain("NVDA");
+      expect(prompt).toContain("WEB RESEARCH");
+      expect(prompt).toContain("ANALYTICAL REASONING");
+      expect(prompt).toContain("revenue up 200%");
+      expect(prompt).toContain("strong positioning");
+      expect(prompt).toContain("contradictions");
+    });
+  });
+
+  describe("Correlation Prompts", () => {
+    it("builds correlation prompt with positions", () => {
+      const prompt = buildCorrelationPrompt({
+        positions: [
+          { ticker: "AAPL", weight: 0.3, sector: "Technology", beta: 1.1 },
+          { ticker: "XOM", weight: 0.2, sector: "Energy" },
+        ],
+        totalValue: 250000,
+        benchmarks: ["SPY"],
+      });
+      expect(prompt).toContain("AAPL");
+      expect(prompt).toContain("30.0%");
+      expect(prompt).toContain("Technology");
+      expect(prompt).toContain("XOM");
+      expect(prompt).toContain("Energy");
+      expect(prompt).toContain("SPY");
+      expect(prompt).toContain("$250,000");
+    });
+
+    it("builds stress test prompt", () => {
+      const prompt = buildStressCorrelationPrompt({
+        positions: [
+          { ticker: "SPY", weight: 0.5 },
+          { ticker: "TLT", weight: 0.5 },
+        ],
+        scenario: "Stagflation: rising inflation with slowing growth",
+      });
+      expect(prompt).toContain("Stagflation");
+      expect(prompt).toContain("SPY");
+      expect(prompt).toContain("TLT");
+      expect(prompt).toContain("50.0%");
     });
   });
 });

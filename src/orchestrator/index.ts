@@ -16,31 +16,42 @@
 import type {
   OrchestrationRequest,
   OrchestrationResponse,
+  CostEstimate,
+  SessionCostSummary,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
 import { executeWithFallback } from "./fallback.js";
+import { CostTracker, type ProviderPricing } from "../utils/cost-tracker.js";
+import type { ModelProvider } from "../types/index.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  trackCosts?: boolean;
+  pricing?: Partial<Record<ModelProvider, ProviderPricing>>;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
 }
 
 export class Orchestrator {
-  private options: Required<OrchestratorOptions>;
+  private options: Required<Omit<OrchestratorOptions, "pricing">>;
+  private costTracker: CostTracker | null;
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
       maxRetries: options.maxRetries ?? 2,
       defaultTimeoutMs: options.defaultTimeoutMs ?? 30_000,
       fallbackEnabled: options.fallbackEnabled ?? true,
+      trackCosts: options.trackCosts ?? true,
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
     };
+    this.costTracker = this.options.trackCosts
+      ? new CostTracker(options.pricing)
+      : null;
   }
 
   async execute(
@@ -71,6 +82,16 @@ export class Orchestrator {
         maxRetries: request.maxRetries ?? this.options.maxRetries,
       });
 
+      let costEstimate: CostEstimate | undefined;
+      if (this.costTracker) {
+        costEstimate = this.costTracker.record(
+          result.response.provider as ModelProvider,
+          result.response.model,
+          request.intent,
+          result.response.tokenUsage
+        );
+      }
+
       const response: OrchestrationResponse = {
         content: result.response.content,
         provider: result.response.provider,
@@ -82,6 +103,7 @@ export class Orchestrator {
           attemptedProviders: result.attemptedProviders,
           errors: result.errors,
           finishReason: result.response.finishReason,
+          ...(costEstimate && { costEstimate }),
         },
       };
 
@@ -117,6 +139,20 @@ export class Orchestrator {
       preferredProvider: provider,
     }));
     return this.fan(requests as OrchestrationRequest[]);
+  }
+
+  /**
+   * Get cumulative cost summary for this orchestrator session.
+   */
+  getSessionCosts(): SessionCostSummary | null {
+    return this.costTracker?.summarize() ?? null;
+  }
+
+  /**
+   * Reset cost tracking for a new session.
+   */
+  resetCosts(): void {
+    this.costTracker?.reset();
   }
 }
 
