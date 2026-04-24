@@ -1,16 +1,16 @@
-/**
- * CoreIntent AI — Market Research Capability
- *
- * Web-grounded market research powered by Perplexity for real-time data
- * with Claude fallback for deeper analysis.
- */
-
 import { Orchestrator } from "../../orchestrator/index.js";
+import {
+  ResearchResultSchema,
+  type StructuredResearchResult,
+} from "../../types/index.js";
+import { parseJsonResponse } from "../../utils/json-parser.js";
 import {
   RESEARCH_SYSTEM_PROMPT,
   buildResearchPrompt,
+  buildStructuredResearchPrompt,
   buildCompetitorAnalysisPrompt,
   buildCatalystResearchPrompt,
+  buildInsightSynthesisPrompt,
 } from "./prompts.js";
 
 export interface ResearchResult {
@@ -26,9 +26,6 @@ export class MarketResearcher {
     this.orchestrator = orchestrator ?? new Orchestrator();
   }
 
-  /**
-   * General market research query.
-   */
   async research(params: {
     query: string;
     ticker?: string;
@@ -47,9 +44,20 @@ export class MarketResearcher {
     };
   }
 
-  /**
-   * Competitive analysis for a ticker.
-   */
+  async structuredResearch(params: {
+    query: string;
+    ticker?: string;
+    depth?: "quick" | "standard" | "deep";
+  }): Promise<StructuredResearchResult> {
+    const response = await this.orchestrator.execute({
+      intent: "research",
+      systemPrompt: RESEARCH_SYSTEM_PROMPT,
+      prompt: buildStructuredResearchPrompt(params),
+    });
+
+    return parseJsonResponse(response.content, ResearchResultSchema);
+  }
+
   async competitorAnalysis(params: {
     ticker: string;
     competitors?: string[];
@@ -67,9 +75,6 @@ export class MarketResearcher {
     };
   }
 
-  /**
-   * Research upcoming catalysts for a ticker.
-   */
   async catalysts(params: {
     ticker: string;
     timeHorizon: "near_term" | "medium_term" | "long_term";
@@ -87,14 +92,14 @@ export class MarketResearcher {
     };
   }
 
-  /**
-   * Multi-source research: query both Perplexity (web) and Claude (reasoning)
-   * and combine insights.
-   */
   async deepDive(params: {
     query: string;
     ticker?: string;
-  }): Promise<{ webResearch: ResearchResult; analysis: ResearchResult }> {
+  }): Promise<{
+    webResearch: ResearchResult;
+    analysis: ResearchResult;
+    synthesis: StructuredResearchResult;
+  }> {
     const [webResponse, analysisResponse] = await this.orchestrator.fan([
       {
         intent: "research",
@@ -110,6 +115,23 @@ export class MarketResearcher {
       },
     ]);
 
+    const synthesisResponse = await this.orchestrator.execute({
+      intent: "reasoning",
+      systemPrompt: RESEARCH_SYSTEM_PROMPT,
+      prompt: buildInsightSynthesisPrompt({
+        webResearch: webResponse.content.slice(0, 3000),
+        reasoningAnalysis: analysisResponse.content.slice(0, 3000),
+        query: params.query,
+        ticker: params.ticker,
+      }),
+      preferredProvider: "claude",
+    });
+
+    const synthesis = parseJsonResponse(
+      synthesisResponse.content,
+      ResearchResultSchema
+    );
+
     return {
       webResearch: {
         content: webResponse.content,
@@ -121,6 +143,7 @@ export class MarketResearcher {
         provider: analysisResponse.provider,
         latencyMs: analysisResponse.latencyMs,
       },
+      synthesis,
     };
   }
 }

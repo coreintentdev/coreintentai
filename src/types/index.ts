@@ -33,6 +33,7 @@ export type TaskIntent =
   | "sentiment"      // Market sentiment — Grok primary, Claude fallback
   | "signal"         // Trade signal generation — Claude primary
   | "risk"           // Risk assessment — Claude primary
+  | "correlation"    // Cross-asset correlation — Claude primary, Grok fallback
   | "general";       // Default — use configured primary
 
 export interface OrchestrationRequest {
@@ -228,6 +229,94 @@ export const MarketRegimeSchema = z.object({
 });
 
 export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
+
+// ---------------------------------------------------------------------------
+// Correlation Intelligence
+// ---------------------------------------------------------------------------
+
+export const CorrelationStrength = z.enum([
+  "strong_positive",
+  "moderate_positive",
+  "weak",
+  "moderate_negative",
+  "strong_negative",
+]);
+
+export const CorrelationPairSchema = z.object({
+  asset1: z.string(),
+  asset2: z.string(),
+  correlation: z.number().min(-1).max(1),
+  relationship: CorrelationStrength,
+  stability: z.enum(["stable", "shifting", "unstable"]),
+  regimeSensitivity: z.string(),
+});
+
+export const CorrelationResultSchema = z.object({
+  assets: z.array(z.string()).min(2),
+  pairs: z.array(CorrelationPairSchema),
+  regimeContext: z
+    .object({
+      currentRegime: z.string(),
+      regimeSensitivity: z.enum(["low", "moderate", "high"]),
+      historicalShifts: z.string(),
+    })
+    .optional(),
+  diversificationScore: z.number().min(0).max(100).optional(),
+  contagionRisk: z.enum(["low", "moderate", "elevated", "high"]).optional(),
+  portfolioImplications: z.object({
+    effectiveDiversification: z.string(),
+    concentrationWarnings: z.array(z.string()),
+    hedgingSuggestions: z.array(z.string()),
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type CorrelationResult = z.infer<typeof CorrelationResultSchema>;
+
+// ---------------------------------------------------------------------------
+// Structured Research
+// ---------------------------------------------------------------------------
+
+export const ResearchFindingSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  relevance: z.enum(["high", "medium", "low"]),
+  source: z.string().optional(),
+  recency: z.enum(["breaking", "recent", "dated"]).optional(),
+});
+
+export const ResearchResultSchema = z.object({
+  topic: z.string(),
+  ticker: z.string().optional(),
+  findings: z.array(ResearchFindingSchema),
+  overallSentiment: z.enum(["bullish", "bearish", "neutral", "mixed"]).optional(),
+  keyMetrics: z
+    .array(
+      z.object({
+        name: z.string(),
+        value: z.string(),
+        trend: z.enum(["improving", "stable", "deteriorating"]).optional(),
+      })
+    )
+    .optional(),
+  catalysts: z
+    .array(
+      z.object({
+        event: z.string(),
+        expectedDate: z.string().optional(),
+        impact: z.enum(["positive", "negative", "uncertain"]),
+        magnitude: z.enum(["high", "medium", "low"]),
+      })
+    )
+    .optional(),
+  risks: z.array(z.string()).optional(),
+  summary: z.string(),
+  confidence: z.number().min(0).max(1),
+  timestamp: z.string().datetime(),
+});
+
+export type StructuredResearchResult = z.infer<typeof ResearchResultSchema>;
 
 // ---------------------------------------------------------------------------
 // Agent System

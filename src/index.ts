@@ -17,6 +17,7 @@ export {
   executeWithFallback,
   CoreIntentAIError,
 } from "./orchestrator/fallback.js";
+export { AdaptiveRouter } from "./orchestrator/adaptive-router.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -38,6 +39,7 @@ export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
+export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -59,6 +61,7 @@ export {
   RiskManagerAgent,
   TradeExecutorAgent,
 } from "./agents/index.js";
+export type { PipelineResult } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -86,11 +89,13 @@ export type {
   TradingSignal,
   RiskAssessment,
   MarketRegime,
+  CorrelationResult,
+  StructuredResearchResult,
   AgentConfig,
   AgentMessage,
   AgentResult,
   PipelineStage,
-  PipelineResult,
+  PipelineResult as TypedPipelineResult,
 } from "./types/index.js";
 
 export {
@@ -98,6 +103,11 @@ export {
   TradingSignalSchema,
   RiskAssessmentSchema,
   MarketRegimeSchema,
+  CorrelationResultSchema,
+  CorrelationPairSchema,
+  ResearchResultSchema,
+  ResearchFindingSchema,
   RegimeType,
   VolatilityRegime,
+  CorrelationStrength,
 } from "./types/index.js";
