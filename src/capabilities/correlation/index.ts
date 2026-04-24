@@ -116,10 +116,7 @@ export class CorrelationAnalyzer {
         ? divScores.reduce((sum, s) => sum + s, 0) / divScores.length
         : null;
 
-    const allPairCorrelations = results.map((r) =>
-      r.pairs.map((p) => p.correlation)
-    );
-    const agreement = computeCorrelationAgreement(allPairCorrelations);
+    const agreement = computeCorrelationAgreement(results);
 
     return { results, averageDiversification, agreement };
   }
@@ -129,21 +126,39 @@ function parseCorrelationResponse(content: string): CorrelationResult {
   return parseJsonResponse(content, CorrelationResultSchema);
 }
 
-function computeCorrelationAgreement(
-  allPairCorrelations: number[][]
-): number {
-  if (allPairCorrelations.length < 2) return 1;
+function pairKey(asset1: string, asset2: string): string {
+  return [asset1, asset2].sort().join("|");
+}
 
-  const pairCount = Math.min(
-    ...allPairCorrelations.map((a) => a.length)
-  );
-  if (pairCount === 0) return 0;
+function computeCorrelationAgreement(
+  results: CorrelationResult[]
+): number {
+  if (results.length < 2) return 1;
+
+  const pairMaps = results.map((r) => {
+    const m = new Map<string, number>();
+    for (const p of r.pairs) {
+      m.set(pairKey(p.asset1, p.asset2), p.correlation);
+    }
+    return m;
+  });
+
+  const allKeys = new Set<string>();
+  for (const m of pairMaps) {
+    for (const k of m.keys()) {
+      allKeys.add(k);
+    }
+  }
+
+  if (allKeys.size === 0) return 0;
 
   let totalDifference = 0;
   let comparisons = 0;
 
-  for (let i = 0; i < pairCount; i++) {
-    const values = allPairCorrelations.map((a) => a[i]).filter((v) => v != null);
+  for (const key of allKeys) {
+    const values = pairMaps
+      .map((m) => m.get(key))
+      .filter((v): v is number => v != null);
     if (values.length < 2) continue;
 
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
