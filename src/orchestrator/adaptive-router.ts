@@ -5,7 +5,6 @@ interface ProviderMetrics {
   totalRequests: number;
   successes: number;
   failures: number;
-  totalLatencyMs: number;
   recentLatencies: number[];
   lastFailure: number | null;
   consecutiveFailures: number;
@@ -35,7 +34,6 @@ export class AdaptiveRouter {
         totalRequests: 0,
         successes: 0,
         failures: 0,
-        totalLatencyMs: 0,
         recentLatencies: [],
         lastFailure: null,
         consecutiveFailures: 0,
@@ -48,7 +46,6 @@ export class AdaptiveRouter {
     m.totalRequests++;
     m.successes++;
     m.consecutiveFailures = 0;
-    m.totalLatencyMs += latencyMs;
     m.recentLatencies.push(latencyMs);
     if (m.recentLatencies.length > this.options.latencyWindowSize) {
       m.recentLatencies.shift();
@@ -132,7 +129,6 @@ export class AdaptiveRouter {
       m.totalRequests = 0;
       m.successes = 0;
       m.failures = 0;
-      m.totalLatencyMs = 0;
       m.recentLatencies = [];
       m.lastFailure = null;
       m.consecutiveFailures = 0;
@@ -179,7 +175,6 @@ export class AdaptiveRouter {
         totalRequests: 0,
         successes: 0,
         failures: 0,
-        totalLatencyMs: 0,
         recentLatencies: [],
         lastFailure: null,
         consecutiveFailures: 0,

@@ -116,10 +116,7 @@ export class CorrelationAnalyzer {
         ? divScores.reduce((sum, s) => sum + s, 0) / divScores.length
         : null;
 
-    const allPairCorrelations = results.map((r) =>
-      r.pairs.map((p) => p.correlation)
-    );
-    const agreement = computeCorrelationAgreement(allPairCorrelations);
+    const agreement = computeCorrelationAgreement(results);
 
     return { results, averageDiversification, agreement };
   }
@@ -129,21 +126,28 @@ function parseCorrelationResponse(content: string): CorrelationResult {
   return parseJsonResponse(content, CorrelationResultSchema);
 }
 
-function computeCorrelationAgreement(
-  allPairCorrelations: number[][]
-): number {
-  if (allPairCorrelations.length < 2) return 1;
+function computeCorrelationAgreement(results: CorrelationResult[]): number {
+  if (results.length < 2) return 1;
 
-  const pairCount = Math.min(
-    ...allPairCorrelations.map((a) => a.length)
-  );
-  if (pairCount === 0) return 0;
+  const pairCorrelations = new Map<string, number[]>();
+
+  for (const result of results) {
+    const seenPairs = new Set<string>();
+    for (const pair of result.pairs) {
+      const pairKey = buildPairKey(pair.asset1, pair.asset2);
+      if (seenPairs.has(pairKey)) continue;
+      seenPairs.add(pairKey);
+
+      const correlations = pairCorrelations.get(pairKey) ?? [];
+      correlations.push(pair.correlation);
+      pairCorrelations.set(pairKey, correlations);
+    }
+  }
 
   let totalDifference = 0;
   let comparisons = 0;
 
-  for (let i = 0; i < pairCount; i++) {
-    const values = allPairCorrelations.map((a) => a[i]).filter((v) => v != null);
+  for (const values of pairCorrelations.values()) {
     if (values.length < 2) continue;
 
     const mean = values.reduce((s, v) => s + v, 0) / values.length;
@@ -154,6 +158,11 @@ function computeCorrelationAgreement(
 
   if (comparisons === 0) return 0;
   return Math.max(0, 1 - totalDifference / comparisons);
+}
+
+function buildPairKey(asset1: string, asset2: string): string {
+  const [a, b] = [asset1, asset2].sort((x, y) => x.localeCompare(y));
+  return `${a}|${b}`;
 }
 
 export { CORRELATION_SYSTEM_PROMPT } from "./prompts.js";
