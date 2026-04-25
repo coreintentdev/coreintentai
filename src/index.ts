@@ -17,6 +17,11 @@ export {
   executeWithFallback,
   CoreIntentAIError,
 } from "./orchestrator/fallback.js";
+export { CircuitBreaker } from "./orchestrator/circuit-breaker.js";
+export type {
+  CircuitState,
+  CircuitBreakerOptions,
+} from "./orchestrator/circuit-breaker.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -38,6 +43,7 @@ export { SignalGenerator } from "./capabilities/signals/index.js";
 export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
+export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -58,6 +64,7 @@ export {
   MarketAnalystAgent,
   RiskManagerAgent,
   TradeExecutorAgent,
+  StrategyAdvisorAgent,
 } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
@@ -86,6 +93,8 @@ export type {
   TradingSignal,
   RiskAssessment,
   MarketRegime,
+  CorrelationPair,
+  CorrelationMatrix,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -98,6 +107,9 @@ export {
   TradingSignalSchema,
   RiskAssessmentSchema,
   MarketRegimeSchema,
+  CorrelationPairSchema,
+  CorrelationMatrixSchema,
+  CorrelationStrength,
   RegimeType,
   VolatilityRegime,
 } from "./types/index.js";

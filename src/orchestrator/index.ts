@@ -19,28 +19,37 @@ import type {
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
 import { executeWithFallback } from "./fallback.js";
+import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  circuitBreaker?: Partial<CircuitBreakerOptions> | false;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
 }
 
 export class Orchestrator {
-  private options: Required<OrchestratorOptions>;
+  private options: Required<Omit<OrchestratorOptions, "circuitBreaker">> & { circuitBreaker: CircuitBreaker | null };
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
       maxRetries: options.maxRetries ?? 2,
       defaultTimeoutMs: options.defaultTimeoutMs ?? 30_000,
       fallbackEnabled: options.fallbackEnabled ?? true,
+      circuitBreaker: options.circuitBreaker === false
+        ? null
+        : new CircuitBreaker(typeof options.circuitBreaker === "object" ? options.circuitBreaker : undefined),
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
     };
+  }
+
+  getCircuitBreaker(): CircuitBreaker | null {
+    return this.options.circuitBreaker;
   }
 
   async execute(
@@ -69,6 +78,7 @@ export class Orchestrator {
           timeoutMs: request.timeoutMs ?? this.options.defaultTimeoutMs,
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
+        circuitBreaker: this.options.circuitBreaker ?? undefined,
       });
 
       const response: OrchestrationResponse = {
@@ -122,3 +132,5 @@ export class Orchestrator {
 
 export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
+export { CircuitBreaker } from "./circuit-breaker.js";
+export type { CircuitState, CircuitBreakerOptions } from "./circuit-breaker.js";

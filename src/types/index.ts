@@ -230,6 +230,65 @@ export const MarketRegimeSchema = z.object({
 export type MarketRegime = z.infer<typeof MarketRegimeSchema>;
 
 // ---------------------------------------------------------------------------
+// Correlation Analysis
+// ---------------------------------------------------------------------------
+
+export const CorrelationStrength = z.enum([
+  "strong_positive",
+  "moderate_positive",
+  "weak_positive",
+  "uncorrelated",
+  "weak_negative",
+  "moderate_negative",
+  "strong_negative",
+]);
+
+export const CorrelationPairSchema = z.object({
+  tickerA: z.string(),
+  tickerB: z.string(),
+  correlation: z.number().min(-1).max(1),
+  strength: CorrelationStrength,
+  timeframe: z.string(),
+  stability: z.number().min(0).max(1),
+  leadLag: z.object({
+    leader: z.string(),
+    lagDays: z.number().min(0),
+    confidence: z.number().min(0).max(1),
+  }).optional(),
+  regime: z.string().optional(),
+});
+
+export type CorrelationPair = z.infer<typeof CorrelationPairSchema>;
+
+export const CorrelationMatrixSchema = z.object({
+  tickers: z.array(z.string()),
+  analysisDate: z.string().datetime(),
+  timeframe: z.string(),
+  pairs: z.array(CorrelationPairSchema),
+  clusters: z.array(
+    z.object({
+      name: z.string(),
+      tickers: z.array(z.string()),
+      avgCorrelation: z.number().min(-1).max(1),
+      driver: z.string(),
+    })
+  ),
+  diversificationScore: z.number().min(0).max(1),
+  hiddenRisks: z.array(
+    z.object({
+      description: z.string(),
+      severity: z.enum(["low", "medium", "high", "critical"]),
+      affectedTickers: z.array(z.string()),
+    })
+  ),
+  recommendations: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type CorrelationMatrix = z.infer<typeof CorrelationMatrixSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 

@@ -8,11 +8,13 @@
 import type { ModelProvider, TokenUsage } from "../types/index.js";
 import { getAdapter } from "../models/index.js";
 import type { CompletionRequest, CompletionResponse } from "../models/base.js";
+import type { CircuitBreaker } from "./circuit-breaker.js";
 
 export interface FallbackOptions {
   providers: ModelProvider[];
   request: CompletionRequest;
   maxRetries: number;
+  circuitBreaker?: CircuitBreaker;
   onAttempt?: (provider: ModelProvider, attempt: number) => void;
   onFailure?: (provider: ModelProvider, error: Error) => void;
 }
@@ -32,12 +34,21 @@ export interface FallbackResult {
 export async function executeWithFallback(
   options: FallbackOptions
 ): Promise<FallbackResult> {
-  const { providers, request, maxRetries, onAttempt, onFailure } = options;
+  const { providers, request, maxRetries, circuitBreaker, onAttempt, onFailure } = options;
+
+  const chain = circuitBreaker
+    ? circuitBreaker.rankProviders(providers)
+    : providers;
 
   const attemptedProviders: ModelProvider[] = [];
   const errors: Array<{ provider: ModelProvider; error: string }> = [];
 
-  for (const provider of providers) {
+  for (const provider of chain) {
+    if (circuitBreaker && !circuitBreaker.canAttempt(provider)) {
+      errors.push({ provider, error: "circuit open" });
+      continue;
+    }
+
     attemptedProviders.push(provider);
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -45,11 +56,14 @@ export async function executeWithFallback(
 
       try {
         const adapter = getAdapter(provider);
+        const start = performance.now();
 
         // Apply timeout if specified
         const response = request.timeoutMs
           ? await withTimeout(adapter.complete(request), request.timeoutMs)
           : await adapter.complete(request);
+
+        circuitBreaker?.recordSuccess(provider, Math.round(performance.now() - start));
 
         return {
           response,
@@ -62,6 +76,7 @@ export async function executeWithFallback(
           err instanceof Error ? err : new Error(String(err));
 
         onFailure?.(provider, error);
+        circuitBreaker?.recordFailure(provider);
         errors.push({ provider, error: error.message });
 
         // Only retry on the same provider for transient errors

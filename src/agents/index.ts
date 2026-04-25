@@ -8,8 +8,9 @@ import { Orchestrator } from "../orchestrator/index.js";
 import { MarketAnalystAgent } from "./market-analyst.js";
 import { RiskManagerAgent } from "./risk-manager.js";
 import { TradeExecutorAgent } from "./trade-executor.js";
+import { StrategyAdvisorAgent } from "./strategy-advisor.js";
 
-export type AgentName = "MarketAnalyst" | "RiskManager" | "TradeExecutor";
+export type AgentName = "MarketAnalyst" | "RiskManager" | "TradeExecutor" | "StrategyAdvisor";
 
 /**
  * Create all agents with a shared orchestrator instance.
@@ -21,6 +22,7 @@ export function createAgentTeam(orchestrator?: Orchestrator) {
     analyst: new MarketAnalystAgent(orch),
     riskManager: new RiskManagerAgent(orch),
     executor: new TradeExecutorAgent(orch),
+    strategist: new StrategyAdvisorAgent(orch),
   };
 }
 
@@ -40,6 +42,7 @@ export async function runTradingPipeline(params: {
 }): Promise<{
   analysis: string;
   riskAssessment: string;
+  strategy: string;
   executionPlan: string;
   totalLatencyMs: number;
 }> {
@@ -55,9 +58,18 @@ export async function runTradingPipeline(params: {
     { originalInput: params.input }
   );
 
-  // Step 3: Execution planning (uses both analysis and risk)
+  // Step 3: Strategy synthesis (combines analysis + risk into strategic recommendation)
+  const strategyResult = await team.strategist.adviseOnTrade({
+    ticker: params.input,
+    proposedAction: "evaluate opportunity",
+    analysis: analysisResult.output,
+    riskAssessment: riskResult.output,
+    portfolioContext: `Portfolio value: $${(params.portfolioValue ?? 100_000).toLocaleString()}, Risk tolerance: ${params.riskTolerancePct ?? 1}% per trade`,
+  });
+
+  // Step 4: Execution planning (uses analysis, risk, and strategy)
   const execResult = await team.executor.execute(
-    `Generate execution plan based on:\n\nAnalysis:\n${analysisResult.output.slice(0, 1500)}\n\nRisk Assessment:\n${riskResult.output.slice(0, 1500)}`,
+    `Generate execution plan based on:\n\nAnalysis:\n${analysisResult.output.slice(0, 1500)}\n\nRisk Assessment:\n${riskResult.output.slice(0, 1500)}\n\nStrategy:\n${strategyResult.output.slice(0, 1000)}`,
     {
       portfolioValue: params.portfolioValue ?? 100_000,
       riskTolerancePct: params.riskTolerancePct ?? 1,
@@ -67,6 +79,7 @@ export async function runTradingPipeline(params: {
   return {
     analysis: analysisResult.output,
     riskAssessment: riskResult.output,
+    strategy: strategyResult.output,
     executionPlan: execResult.output,
     totalLatencyMs: Math.round(performance.now() - start),
   };
@@ -76,3 +89,4 @@ export { BaseAgent } from "./base.js";
 export { MarketAnalystAgent } from "./market-analyst.js";
 export { RiskManagerAgent } from "./risk-manager.js";
 export { TradeExecutorAgent } from "./trade-executor.js";
+export { StrategyAdvisorAgent } from "./strategy-advisor.js";
