@@ -44,6 +44,9 @@ export { RiskAssessor } from "./capabilities/risk/index.js";
 export { MarketResearcher } from "./capabilities/research/index.js";
 export { RegimeDetector } from "./capabilities/regime/index.js";
 export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
+export { AnomalyDetector } from "./capabilities/anomaly/index.js";
+export { ConsensusEngine } from "./capabilities/consensus/index.js";
+export { MomentumScorer } from "./capabilities/momentum/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -95,6 +98,10 @@ export type {
   MarketRegime,
   CorrelationPair,
   CorrelationMatrix,
+  AnomalyReport,
+  ConsensusResult,
+  MomentumRanking,
+  MomentumReport,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -112,4 +119,14 @@ export {
   CorrelationStrength,
   RegimeType,
   VolatilityRegime,
+  AnomalyReportSchema,
+  AnomalyType,
+  AlertLevel,
+  ConsensusResultSchema,
+  AgreementLevel,
+  MomentumRankingSchema,
+  MomentumReportSchema,
+  AccelerationSignal,
+  TimeframeAlignment,
+  BreadthAssessment,
 } from "./types/index.js";

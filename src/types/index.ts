@@ -289,6 +289,148 @@ export const CorrelationMatrixSchema = z.object({
 export type CorrelationMatrix = z.infer<typeof CorrelationMatrixSchema>;
 
 // ---------------------------------------------------------------------------
+// Anomaly Detection
+// ---------------------------------------------------------------------------
+
+export const AnomalyType = z.enum([
+  "volume_spike",
+  "price_dislocation",
+  "volatility_anomaly",
+  "correlation_break",
+  "options_flow",
+  "order_flow",
+  "fundamental_divergence",
+  "cross_asset_signal",
+]);
+
+export const AlertLevel = z.enum(["none", "watch", "alert", "critical"]);
+
+export const AnomalyReportSchema = z.object({
+  ticker: z.string(),
+  anomalies: z.array(
+    z.object({
+      type: AnomalyType,
+      severity: z.number().min(0).max(100),
+      description: z.string(),
+      evidence: z.array(z.string()),
+      possibleCauses: z.array(z.string()),
+      historicalPrecedent: z.string().optional(),
+      actionable: z.boolean(),
+      suggestedAction: z.string().optional(),
+    })
+  ),
+  overallAnomalyScore: z.number().min(0).max(100),
+  marketContext: z.string(),
+  crossAssetSignals: z.array(z.string()),
+  alertLevel: AlertLevel,
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type AnomalyReport = z.infer<typeof AnomalyReportSchema>;
+
+// ---------------------------------------------------------------------------
+// Multi-Model Consensus
+// ---------------------------------------------------------------------------
+
+export const AgreementLevel = z.enum([
+  "unanimous",
+  "strong_majority",
+  "majority",
+  "split",
+  "contradictory",
+]);
+
+export const ConsensusResultSchema = z.object({
+  query: z.string(),
+  verdict: z.string(),
+  confidence: z.number().min(0).max(1),
+  agreementLevel: AgreementLevel,
+  modelContributions: z.array(
+    z.object({
+      provider: z.string(),
+      position: z.string(),
+      strengthOfEvidence: z.number().min(0).max(1),
+      uniqueInsight: z.string().optional(),
+    })
+  ),
+  keyAgreements: z.array(z.string()),
+  keyDisagreements: z.array(
+    z.object({
+      topic: z.string(),
+      positions: z.array(z.string()),
+      resolution: z.string(),
+    })
+  ),
+  blindSpots: z.array(z.string()),
+  synthesizedAnalysis: z.string(),
+  actionableInsight: z.string(),
+  uncertaintyFactors: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type ConsensusResult = z.infer<typeof ConsensusResultSchema>;
+
+// ---------------------------------------------------------------------------
+// Momentum Scoring
+// ---------------------------------------------------------------------------
+
+export const AccelerationSignal = z.enum([
+  "accelerating",
+  "steady",
+  "decelerating",
+  "reversing",
+]);
+
+export const TimeframeAlignment = z.enum([
+  "aligned",
+  "mixed",
+  "conflicting",
+]);
+
+export const MomentumRankingSchema = z.object({
+  ticker: z.string(),
+  compositeScore: z.number().min(0).max(100),
+  rank: z.number().int().positive(),
+  priceScore: z.number().min(0).max(100),
+  volumeScore: z.number().min(0).max(100),
+  relativeStrengthScore: z.number().min(0).max(100),
+  accelerationSignal: AccelerationSignal,
+  timeframeAlignment: TimeframeAlignment,
+  exhaustionRisk: z.number().min(0).max(1),
+  keyDriver: z.string(),
+  watchFor: z.string(),
+});
+
+export type MomentumRanking = z.infer<typeof MomentumRankingSchema>;
+
+export const BreadthAssessment = z.enum([
+  "healthy",
+  "narrowing",
+  "deteriorating",
+  "capitulation",
+]);
+
+export const MomentumReportSchema = z.object({
+  rankings: z.array(MomentumRankingSchema),
+  topPick: z.string(),
+  avoidList: z.array(z.string()),
+  sectorRotation: z.object({
+    leading: z.array(z.string()),
+    lagging: z.array(z.string()),
+    emerging: z.array(z.string()),
+  }),
+  marketBreadth: z.object({
+    score: z.number().min(0).max(100),
+    assessment: BreadthAssessment,
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type MomentumReport = z.infer<typeof MomentumReportSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
