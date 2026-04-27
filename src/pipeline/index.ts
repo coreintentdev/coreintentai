@@ -12,7 +12,7 @@ import {
   SYNTHESIS_SYSTEM_PROMPT,
   buildSynthesisPrompt,
 } from "./prompts.js";
-import type { TokenUsage, ModelProvider } from "../types/index.js";
+import type { TokenUsage } from "../types/index.js";
 import { z } from "zod";
 
 export interface PipelineOptions {
@@ -44,7 +44,7 @@ const ALL_CAPABILITIES: IntelligenceCapability[] = [
 
 const CAPABILITY_INTENTS: Record<
   IntelligenceCapability,
-  { intent: "fast_analysis" | "reasoning" | "research" | "sentiment" | "risk"; provider?: ModelProvider }
+  { intent: "fast_analysis" | "reasoning" | "research" | "sentiment" | "risk" }
 > = {
   sentiment: { intent: "sentiment" },
   regime: { intent: "reasoning" },
