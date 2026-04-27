@@ -46,12 +46,12 @@ const CAPABILITY_INTENTS: Record<
   IntelligenceCapability,
   { intent: "fast_analysis" | "reasoning" | "research" | "sentiment" | "risk"; provider?: ModelProvider }
 > = {
-  sentiment: { intent: "sentiment" },
-  regime: { intent: "reasoning" },
-  momentum: { intent: "fast_analysis" },
-  risk: { intent: "risk" },
-  technicals: { intent: "fast_analysis" },
-  catalysts: { intent: "research" },
+  sentiment: { intent: "sentiment", provider: "grok" },
+  regime: { intent: "reasoning", provider: "claude" },
+  momentum: { intent: "fast_analysis", provider: "grok" },
+  risk: { intent: "risk", provider: "claude" },
+  technicals: { intent: "fast_analysis", provider: "grok" },
+  catalysts: { intent: "research", provider: "perplexity" },
 };
 
 const CapabilityResponseSchema = z.object({
@@ -204,13 +204,14 @@ export class MarketIntelligencePipeline {
   ): Promise<RawCapabilityResult[]> {
     const tasks = this.enabledCapabilities.map(async (cap) => {
       const prompt = INTELLIGENCE_EXTRACTION_PROMPTS[cap](ticker, context);
-      const { intent } = CAPABILITY_INTENTS[cap];
+      const { intent, provider } = CAPABILITY_INTENTS[cap];
 
       try {
         const response = await this.orchestrator.execute({
           intent,
           systemPrompt: `You are a trading intelligence AI. Respond ONLY with the requested JSON. No commentary.`,
           prompt,
+          preferredProvider: provider,
           timeoutMs: this.timeoutMs,
         });
 
