@@ -103,6 +103,10 @@ export class PortfolioOptimizer {
       .map((r) => `${r.type}: ${r.description} (${r.severity})`)
       .join("; ");
 
+    const marketContext = riskContext
+      ? `Risk scan identified: ${riskContext}. Factor these risks into your optimization.`
+      : "Risk scan found no concentration risks. Optimize for risk-adjusted returns.";
+
     const optimizationResponse = await this.orchestrator.execute({
       intent: "reasoning",
       systemPrompt: PORTFOLIO_SYSTEM_PROMPT,
@@ -110,7 +114,7 @@ export class PortfolioOptimizer {
         positions: params.positions,
         totalValue: params.totalValue,
         riskTolerance: params.riskTolerance,
-        marketContext: `Risk scan identified: ${riskContext}. Factor these risks into your optimization.`,
+        marketContext,
       }),
     });
 
