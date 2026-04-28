@@ -431,6 +431,168 @@ export const MomentumReportSchema = z.object({
 export type MomentumReport = z.infer<typeof MomentumReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Volatility Analysis
+// ---------------------------------------------------------------------------
+
+export const TermStructureShape = z.enum([
+  "contango",
+  "backwardation",
+  "flat",
+  "kinked",
+  "steep_contango",
+]);
+
+export const SkewPattern = z.enum(["normal", "reverse", "smile", "smirk"]);
+
+export const VolStrategyType = z.enum([
+  "long_vol",
+  "short_vol",
+  "skew_trade",
+  "term_structure",
+  "gamma_scalp",
+  "hedging",
+]);
+
+export const VolForecastDirection = z.enum([
+  "expanding",
+  "contracting",
+  "stable",
+]);
+
+export const VolatilityAnalysisSchema = z.object({
+  ticker: z.string(),
+  currentIV: z.number().min(0).max(300),
+  currentRV: z.number().min(0).max(300),
+  ivRank: z.number().min(0).max(100),
+  ivPercentile: z.number().min(0).max(100),
+  ivRvSpread: z.number(),
+  volatilityRegime: VolatilityRegime,
+  termStructure: z.object({
+    shape: TermStructureShape,
+    steepness: z.number().min(-1).max(1),
+    frontMonthIV: z.number().min(0),
+    backMonthIV: z.number().min(0),
+    eventPremium: z.string().nullable(),
+    interpretation: z.string(),
+  }),
+  skew: z.object({
+    pattern: SkewPattern,
+    putCallSkew: z.number(),
+    skewPercentile: z.number().min(0).max(100),
+    interpretation: z.string(),
+  }),
+  volForecast: z.object({
+    direction: VolForecastDirection,
+    catalyst: z.string(),
+    confidence: z.number().min(0).max(1),
+  }),
+  strategies: z.array(
+    z.object({
+      name: z.string(),
+      type: VolStrategyType,
+      rationale: z.string(),
+      edge: z.string(),
+      risk: z.string(),
+      conviction: z.number().min(0).max(1),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type VolatilityAnalysis = z.infer<typeof VolatilityAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
+// Portfolio Optimization
+// ---------------------------------------------------------------------------
+
+export const AllocationAction = z.enum([
+  "increase",
+  "decrease",
+  "hold",
+  "add",
+  "exit",
+]);
+
+export const TradePriority = z.enum([
+  "immediate",
+  "next_rebalance",
+  "opportunistic",
+]);
+
+export const ConcentrationRiskType = z.enum([
+  "single_position",
+  "sector",
+  "factor",
+  "geography",
+  "correlation",
+]);
+
+export const PortfolioAnalysisSchema = z.object({
+  portfolioName: z.string(),
+  totalValue: z.number().positive(),
+  currentAllocations: z.array(
+    z.object({
+      ticker: z.string(),
+      weight: z.number().min(0).max(1),
+      currentValue: z.number().min(0),
+      sector: z.string(),
+    })
+  ),
+  riskMetrics: z.object({
+    sharpeRatio: z.number(),
+    sortinoRatio: z.number(),
+    maxDrawdown: z.number().min(0).max(1),
+    beta: z.number(),
+    valueAtRisk95: z.number(),
+    expectedShortfall: z.number(),
+    annualizedReturn: z.number(),
+    annualizedVolatility: z.number().min(0),
+  }),
+  optimizedAllocations: z.array(
+    z.object({
+      ticker: z.string(),
+      currentWeight: z.number().min(0).max(1),
+      targetWeight: z.number().min(0).max(1),
+      action: AllocationAction,
+      rationale: z.string(),
+    })
+  ),
+  rebalancingTrades: z.array(
+    z.object({
+      ticker: z.string(),
+      side: z.enum(["buy", "sell"]),
+      amount: z.number().positive(),
+      priority: TradePriority,
+      reason: z.string(),
+    })
+  ),
+  concentrationRisks: z.array(
+    z.object({
+      type: ConcentrationRiskType,
+      description: z.string(),
+      severity: z.enum(["low", "medium", "high", "critical"]),
+      affectedPositions: z.array(z.string()),
+      mitigation: z.string(),
+    })
+  ),
+  scenarioAnalysis: z.array(
+    z.object({
+      scenario: z.string(),
+      probability: z.number().min(0).max(1),
+      portfolioImpact: z.number(),
+      worstHit: z.string(),
+      bestPerformer: z.string(),
+      recommendation: z.string(),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type PortfolioAnalysis = z.infer<typeof PortfolioAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 

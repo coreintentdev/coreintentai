@@ -47,6 +47,8 @@ export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 export { AnomalyDetector } from "./capabilities/anomaly/index.js";
 export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
+export { VolatilityAnalyzer } from "./capabilities/volatility/index.js";
+export { PortfolioOptimizer } from "./capabilities/portfolio/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -102,6 +104,8 @@ export type {
   ConsensusResult,
   MomentumRanking,
   MomentumReport,
+  VolatilityAnalysis,
+  PortfolioAnalysis,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -129,4 +133,13 @@ export {
   AccelerationSignal,
   TimeframeAlignment,
   BreadthAssessment,
+  VolatilityAnalysisSchema,
+  TermStructureShape,
+  SkewPattern,
+  VolStrategyType,
+  VolForecastDirection,
+  PortfolioAnalysisSchema,
+  AllocationAction,
+  TradePriority,
+  ConcentrationRiskType,
 } from "./types/index.js";
