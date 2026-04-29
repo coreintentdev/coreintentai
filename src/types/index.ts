@@ -27,13 +27,15 @@ export interface ModelConfig {
 // ---------------------------------------------------------------------------
 
 export type TaskIntent =
-  | "reasoning"      // Complex analysis — route to Claude
-  | "fast_analysis"  // Speed-critical — route to Grok
-  | "research"       // Web-grounded lookup — route to Perplexity
-  | "sentiment"      // Market sentiment — Grok primary, Claude fallback
-  | "signal"         // Trade signal generation — Claude primary
-  | "risk"           // Risk assessment — Claude primary
-  | "general";       // Default — use configured primary
+  | "reasoning"        // Complex analysis — route to Claude
+  | "fast_analysis"    // Speed-critical — route to Grok
+  | "research"         // Web-grounded lookup — route to Perplexity
+  | "sentiment"        // Market sentiment — Grok primary, Claude fallback
+  | "signal"           // Trade signal generation — Claude primary
+  | "risk"             // Risk assessment — Claude primary
+  | "portfolio"        // Portfolio optimization — Claude primary, Grok validation
+  | "volatility"       // Volatility analysis — Claude primary
+  | "general";         // Default — use configured primary
 
 export interface OrchestrationRequest {
   intent: TaskIntent;

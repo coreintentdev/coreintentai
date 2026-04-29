@@ -45,6 +45,14 @@ const ROUTE_TABLE: Record<TaskIntent, RouteConfig> = {
     primary: "claude",
     fallbacks: ["grok"],
   },
+  portfolio: {
+    primary: "claude",
+    fallbacks: ["grok"],
+  },
+  volatility: {
+    primary: "claude",
+    fallbacks: ["grok", "perplexity"],
+  },
   general: {
     primary: "claude",
     fallbacks: ["grok", "perplexity"],

@@ -37,6 +37,19 @@ describe("Intent Router", () => {
       expect(route.primary).toBe("claude");
     });
 
+    it("routes portfolio optimization to Claude", () => {
+      const route = resolveRoute("portfolio");
+      expect(route.primary).toBe("claude");
+      expect(route.fallbacks).toContain("grok");
+    });
+
+    it("routes volatility analysis to Claude with Perplexity fallback", () => {
+      const route = resolveRoute("volatility");
+      expect(route.primary).toBe("claude");
+      expect(route.fallbacks).toContain("grok");
+      expect(route.fallbacks).toContain("perplexity");
+    });
+
     it("uses Claude as default for general tasks", () => {
       const route = resolveRoute("general");
       expect(route.primary).toBe("claude");
