@@ -97,7 +97,7 @@ export class VolatilityAnalyzer {
     upcomingEvents?: string[];
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildVolatilityAnalysisPrompt(params),
     });
@@ -115,7 +115,7 @@ export class VolatilityAnalyzer {
     eventCalendar?: string[];
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildVolTermStructurePrompt(params),
     });
@@ -130,7 +130,7 @@ export class VolatilityAnalyzer {
     rvHistory: string;
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildVolRegimePrompt(params),
     });
@@ -147,7 +147,7 @@ export class VolatilityAnalyzer {
     optionPricing?: string;
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildEventVolPrompt(params),
     });
@@ -194,10 +194,11 @@ export class VolatilityAnalyzer {
     }
 
     const deepResponse = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: `Deep volatility analysis needed. Quick scan found elevated vol:
 
+Ticker: ${quickScan.ticker || params.ticker}
 IV Rank: ${quickScan.snapshot.ivRank}
 ATM IV: ${(quickScan.snapshot.atmIv * 100).toFixed(1)}%
 IV-RV Spread: ${(quickScan.snapshot.ivRvSpread * 100).toFixed(1)}%
@@ -241,7 +242,7 @@ Provide deep analysis: What's driving the elevated vol? Is it event-driven or st
 
     const responses = await this.orchestrator.consensus(
       {
-        intent: "reasoning",
+        intent: "volatility",
         systemPrompt: VOLATILITY_SYSTEM_PROMPT,
         prompt,
       },

@@ -38,6 +38,8 @@ export class Telemetry {
   private providerMetrics = new Map<ModelProvider, ProviderMetrics>();
   private maxRecords: number;
   private costOverrides: Partial<Record<ModelProvider, CostTable>>;
+  private totalRequests = 0;
+  private totalFallbackRequests = 0;
 
   constructor(options?: {
     maxRecords?: number;
@@ -73,6 +75,11 @@ export class Telemetry {
       success: params.success,
       timestamp: Date.now(),
     };
+
+    this.totalRequests++;
+    if (record.fallbackUsed) {
+      this.totalFallbackRequests++;
+    }
 
     this.records.push(record);
     if (this.records.length > this.maxRecords) {
@@ -178,11 +185,9 @@ export class Telemetry {
     }
 
     const totalCost = this.getTotalCost();
-    const totalRequests = this.records.length;
+    const totalRequests = this.totalRequests;
     const fallbackRate =
-      totalRequests > 0
-        ? this.records.filter((r) => r.fallbackUsed).length / totalRequests
-        : 0;
+      totalRequests > 0 ? this.totalFallbackRequests / totalRequests : 0;
 
     return {
       totalRequests,
@@ -226,6 +231,8 @@ export class Telemetry {
   reset(): void {
     this.records = [];
     this.providerMetrics.clear();
+    this.totalRequests = 0;
+    this.totalFallbackRequests = 0;
   }
 }
 
