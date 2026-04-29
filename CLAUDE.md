@@ -8,7 +8,8 @@ Based in: New Zealand (NEVER register anything in Australia)
 ## What This Repo IS
 - The **AI intelligence layer** for the CoreIntent trading platform
 - Sovereign multi-model orchestration: Claude, Grok, Perplexity
-- Capabilities: Sentiment analysis, signal generation, risk assessment, regime detection, correlation analysis, agent workflows
+- Capabilities: Sentiment, signals, risk, regime, correlation, anomaly, consensus, momentum, portfolio optimization, volatility surface analysis, agent workflows
+- Telemetry: Cost tracking, latency percentiles, provider scoring, decision audit trail
 - TypeScript library with Zod-validated outputs
 
 ## What This Repo IS NOT
@@ -40,8 +41,14 @@ src/
 │   ├── risk/       # Risk assessment framework
 │   ├── research/   # Web-grounded market research
 │   ├── regime/     # Market regime detection
-│   └── correlation/ # Cross-asset correlation analysis
+│   ├── correlation/ # Cross-asset correlation analysis
+│   ├── anomaly/    # Anomaly detection (volume spikes, dislocations)
+│   ├── consensus/  # Multi-model consensus engine
+│   ├── momentum/   # Momentum scoring & ranking
+│   ├── portfolio/  # Portfolio optimization (MPT, Risk Parity, Black-Litterman)
+│   └── volatility/ # Volatility surface analysis (skew, term structure, event vol)
 ├── agents/         # Autonomous trading intelligence agents (incl. StrategyAdvisor)
+├── telemetry/      # Cost tracking, latency monitoring, provider scoring
 ├── types/          # Shared TypeScript types + Zod schemas
 ├── utils/          # Shared utilities (robust JSON parser)
 └── index.ts        # Public API exports
@@ -50,7 +57,7 @@ src/
 ## Key Patterns
 
 ### Intent-Based Routing
-Every request has an `intent` (reasoning, fast_analysis, research, sentiment, signal, risk). The router maps each intent to the optimal model provider with fallback chains.
+Every request has an `intent` (reasoning, fast_analysis, research, sentiment, signal, risk, portfolio, volatility). The router maps each intent to the optimal model provider with fallback chains.
 
 ### Fallback Chains + Circuit Breaker
 If a provider fails (timeout, rate limit, error), the system automatically falls through to the next provider. Transient errors trigger retries with exponential backoff (with jitter). A circuit breaker tracks provider health — after repeated failures, the circuit opens and the provider is deprioritized until it recovers. Providers are ranked by health state and latency for adaptive routing.

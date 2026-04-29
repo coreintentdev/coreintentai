@@ -47,6 +47,14 @@ export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 export { AnomalyDetector } from "./capabilities/anomaly/index.js";
 export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
+export { PortfolioOptimizer } from "./capabilities/portfolio/index.js";
+export { VolatilityAnalyzer } from "./capabilities/volatility/index.js";
+
+// ---------------------------------------------------------------------------
+// Telemetry
+// ---------------------------------------------------------------------------
+export { Telemetry } from "./telemetry/index.js";
+export type { TelemetrySnapshot } from "./telemetry/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -108,6 +116,29 @@ export type {
   PipelineStage,
   PipelineResult,
 } from "./types/index.js";
+
+export type {
+  PortfolioOptimization,
+} from "./capabilities/portfolio/index.js";
+
+export {
+  PortfolioOptimizationSchema,
+  AllocationSchema,
+  RebalanceActionSchema,
+} from "./capabilities/portfolio/index.js";
+
+export type {
+  VolatilityAnalysis,
+} from "./capabilities/volatility/index.js";
+
+export {
+  VolatilityAnalysisSchema,
+  VolSnapshotSchema,
+  VolSurfaceSchema,
+  VolEventSchema,
+  VolStrategySchema,
+  VolAlertSchema,
+} from "./capabilities/volatility/index.js";
 
 export {
   SentimentResultSchema,
