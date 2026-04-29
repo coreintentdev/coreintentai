@@ -97,7 +97,7 @@ export class VolatilityAnalyzer {
     upcomingEvents?: string[];
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildVolatilityAnalysisPrompt(params),
     });
@@ -115,7 +115,7 @@ export class VolatilityAnalyzer {
     eventCalendar?: string[];
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildVolTermStructurePrompt(params),
     });
@@ -130,7 +130,7 @@ export class VolatilityAnalyzer {
     rvHistory: string;
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildVolRegimePrompt(params),
     });
@@ -147,7 +147,7 @@ export class VolatilityAnalyzer {
     optionPricing?: string;
   }): Promise<VolatilityAnalysis> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
       prompt: buildEventVolPrompt(params),
     });
@@ -194,9 +194,9 @@ export class VolatilityAnalyzer {
     }
 
     const deepResponse = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "volatility",
       systemPrompt: VOLATILITY_SYSTEM_PROMPT,
-      prompt: `Deep volatility analysis needed. Quick scan found elevated vol:
+      prompt: `Deep volatility analysis needed for ${params.ticker}. Quick scan found elevated vol:
 
 IV Rank: ${quickScan.snapshot.ivRank}
 ATM IV: ${(quickScan.snapshot.atmIv * 100).toFixed(1)}%

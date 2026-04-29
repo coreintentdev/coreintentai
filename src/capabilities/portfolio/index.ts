@@ -102,7 +102,7 @@ export class PortfolioOptimizer {
     correlationData?: string;
   }): Promise<PortfolioOptimization> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "portfolio",
       systemPrompt: PORTFOLIO_SYSTEM_PROMPT,
       prompt: buildPortfolioOptimizationPrompt(params),
     });
@@ -117,7 +117,7 @@ export class PortfolioOptimizer {
     targetRisk?: number;
   }): Promise<PortfolioOptimization> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "portfolio",
       systemPrompt: PORTFOLIO_SYSTEM_PROMPT,
       prompt: buildRiskParityPrompt(params),
     });
@@ -140,7 +140,7 @@ export class PortfolioOptimizer {
     transactionCosts?: string;
   }): Promise<PortfolioOptimization> {
     const response = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "portfolio",
       systemPrompt: PORTFOLIO_SYSTEM_PROMPT,
       prompt: buildRebalancePrompt(params),
     });
@@ -181,7 +181,7 @@ export class PortfolioOptimizer {
       ];
 
     const stressResponse = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "portfolio",
       systemPrompt: PORTFOLIO_SYSTEM_PROMPT,
       prompt: `Stress-test this portfolio:
 
@@ -201,13 +201,16 @@ For each scenario:
 3. Does the portfolio survive without forced liquidation?
 4. Recommended hedging actions
 
-Overall: Does this portfolio PASS or FAIL the stress test? If FAIL, what specific changes are needed?`,
+Overall verdict — respond with EXACTLY one of these on its own line:
+VERDICT: PASS
+VERDICT: FAIL
+
+Then explain your reasoning. If FAIL, what specific changes are needed?`,
       preferredProvider: "grok",
     });
 
-    const passed =
-      stressResponse.content.toLowerCase().includes("pass") &&
-      !stressResponse.content.toLowerCase().includes("fail");
+    const verdictMatch = stressResponse.content.match(/VERDICT:\s*(PASS|FAIL)/i);
+    const passed = verdictMatch ? verdictMatch[1].toUpperCase() === "PASS" : false;
 
     return {
       portfolio,
@@ -278,23 +281,24 @@ Overall: Does this portfolio PASS or FAIL the stress test? If FAIL, what specifi
     }
 
     // Agreement: how similar are the weight vectors?
+    // Pad missing tickers with 0 — a ticker in one model but not another is disagreement
+    const numPortfolios = portfolios.length;
     let totalVariance = 0;
     let count = 0;
     for (const weights of tickerWeights.values()) {
-      if (weights.length > 1) {
-        const mean = weights.reduce((a, b) => a + b, 0) / weights.length;
-        const variance =
-          weights.reduce((sum, w) => sum + (w - mean) ** 2, 0) /
-          weights.length;
-        totalVariance += variance;
-        count++;
-      }
+      while (weights.length < numPortfolios) weights.push(0);
+      const mean = weights.reduce((a, b) => a + b, 0) / weights.length;
+      const variance =
+        weights.reduce((sum, w) => sum + (w - mean) ** 2, 0) /
+        weights.length;
+      totalVariance += variance;
+      count++;
     }
     const agreement = count > 0 ? Math.max(0, 1 - Math.sqrt(totalVariance / count) * 5) : 1;
 
     // Final synthesis pass
     const synthResponse = await this.orchestrator.execute({
-      intent: "reasoning",
+      intent: "portfolio",
       systemPrompt: PORTFOLIO_SYSTEM_PROMPT,
       prompt: `Synthesize these ${portfolios.length} portfolio optimizations into one robust allocation.
 

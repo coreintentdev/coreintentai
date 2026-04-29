@@ -36,6 +36,8 @@ const COST_PER_1K_TOKENS: Record<ModelProvider, CostTable> = {
 export class Telemetry {
   private records: RequestRecord[] = [];
   private providerMetrics = new Map<ModelProvider, ProviderMetrics>();
+  private totalRequestCount = 0;
+  private totalFallbackCount = 0;
   private maxRecords: number;
   private costOverrides: Partial<Record<ModelProvider, CostTable>>;
 
@@ -78,6 +80,9 @@ export class Telemetry {
     if (this.records.length > this.maxRecords) {
       this.records.shift();
     }
+
+    this.totalRequestCount++;
+    if (record.fallbackUsed) this.totalFallbackCount++;
 
     this.updateMetrics(record);
     return record;
@@ -178,10 +183,10 @@ export class Telemetry {
     }
 
     const totalCost = this.getTotalCost();
-    const totalRequests = this.records.length;
+    const totalRequests = this.totalRequestCount;
     const fallbackRate =
       totalRequests > 0
-        ? this.records.filter((r) => r.fallbackUsed).length / totalRequests
+        ? this.totalFallbackCount / totalRequests
         : 0;
 
     return {
@@ -226,6 +231,8 @@ export class Telemetry {
   reset(): void {
     this.records = [];
     this.providerMetrics.clear();
+    this.totalRequestCount = 0;
+    this.totalFallbackCount = 0;
   }
 }
 
