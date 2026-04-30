@@ -94,15 +94,14 @@ export class Trace {
   readonly id: string;
   readonly name: string;
   private rootSpan: Span;
-  private allSpans = new Map<string, Span>();
   private startTime: number;
+  private endTime: number | null = null;
 
   constructor(name: string) {
     this.id = generateId();
     this.name = name;
     this.startTime = performance.now();
     this.rootSpan = new Span(this.id, name, "pipeline");
-    this.allSpans.set(this.rootSpan.id, this.rootSpan);
   }
 
   get root(): Span {
@@ -111,17 +110,17 @@ export class Trace {
 
   startSpan(name: string, kind: SpanData["kind"], parent?: Span): Span {
     const parentSpan = parent ?? this.rootSpan;
-    const span = parentSpan.startChild(name, kind);
-    this.allSpans.set(span.id, span);
-    return span;
+    return parentSpan.startChild(name, kind);
   }
 
   end(status: "ok" | "error" = "ok", error?: string): void {
+    this.endTime = performance.now();
     this.rootSpan.end(status, error);
   }
 
   get durationMs(): number {
-    return Math.round(performance.now() - this.startTime);
+    const end = this.endTime ?? performance.now();
+    return Math.round(end - this.startTime);
   }
 
   toJSON(): {

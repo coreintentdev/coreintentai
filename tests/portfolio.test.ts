@@ -323,6 +323,19 @@ describe("Portfolio Prompts", () => {
 
       expect(prompt).toContain("10 bps");
     });
+
+    it("includes zero transaction cost", () => {
+      const prompt = buildRebalancePrompt({
+        currentPositions: [
+          { ticker: "AAPL", currentWeight: 0.2, targetWeight: 0.15, drift: 0.05 },
+        ],
+        regime: "ranging",
+        urgency: "low",
+        transactionCostBps: 0,
+      });
+
+      expect(prompt).toContain("0 bps");
+    });
   });
 
   describe("buildScenarioPrompt", () => {

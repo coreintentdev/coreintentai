@@ -112,6 +112,15 @@ describe("Trace", () => {
     expect(trace.durationMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("freezes duration after end", () => {
+    const trace = new Trace("test");
+    trace.end("ok");
+    const d1 = trace.durationMs;
+    // duration should not grow after ending
+    const d2 = trace.durationMs;
+    expect(d2).toBe(d1);
+  });
+
   it("serializes to JSON", () => {
     const trace = new Trace("test");
     trace.end("ok");

@@ -76,6 +76,17 @@ describe("AdaptiveRouter", () => {
       expect(route.primary).toBe("claude");
     });
 
+    it("does not promote preferred provider with poor success rate", () => {
+      for (let i = 0; i < 5; i++) {
+        router.recordOutcome("grok", "reasoning", false, 500);
+        router.recordOutcome("claude", "reasoning", true, 300);
+      }
+
+      // Grok has 0% success rate — should NOT be promoted even as preferred
+      const route = router.resolveRoute("reasoning", "grok");
+      expect(route.primary).toBe("claude");
+    });
+
     it("routes different intents independently", () => {
       // Grok is better for sentiment
       for (let i = 0; i < 5; i++) {

@@ -87,7 +87,7 @@ export class AdaptiveRouter {
 
     if (preferredProvider) {
       const preferred = scores.find((s) => s.provider === preferredProvider);
-      if (preferred && preferred.score > 0) {
+      if (preferred && preferred.successRate > 0.5) {
         const rest = scores
           .filter((s) => s.provider !== preferredProvider)
           .map((s) => s.provider);
