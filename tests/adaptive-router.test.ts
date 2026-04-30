@@ -76,6 +76,16 @@ describe("AdaptiveRouter", () => {
       expect(route.primary).toBe("claude");
     });
 
+    it("does not force preferred provider with only failed outcomes", () => {
+      for (let i = 0; i < 5; i++) {
+        router.recordOutcome("claude", "reasoning", false, 300);
+        router.recordOutcome("grok", "reasoning", true, 100);
+      }
+
+      const route = router.resolveRoute("reasoning", "claude");
+      expect(route.primary).toBe("grok");
+    });
+
     it("routes different intents independently", () => {
       // Grok is better for sentiment
       for (let i = 0; i < 5; i++) {

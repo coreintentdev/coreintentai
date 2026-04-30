@@ -112,6 +112,14 @@ describe("Trace", () => {
     expect(trace.durationMs).toBeGreaterThanOrEqual(0);
   });
 
+  it("freezes duration after ending", async () => {
+    const trace = new Trace("test");
+    trace.end("ok");
+    const endedDuration = trace.durationMs;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(trace.durationMs).toBe(endedDuration);
+  });
+
   it("serializes to JSON", () => {
     const trace = new Trace("test");
     trace.end("ok");

@@ -76,7 +76,7 @@ export function buildRebalancePrompt(params: {
 }): string {
   let prompt = `Generate a rebalancing plan for the following portfolio drift.\n\nCurrent Regime: ${params.regime}\nRebalancing Urgency: ${params.urgency}\n`;
 
-  if (params.transactionCostBps) {
+  if (params.transactionCostBps != null) {
     prompt += `Transaction Cost: ${params.transactionCostBps} bps per trade\n`;
   }
 
