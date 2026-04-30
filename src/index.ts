@@ -22,6 +22,8 @@ export type {
   CircuitState,
   CircuitBreakerOptions,
 } from "./orchestrator/circuit-breaker.js";
+export { AdaptiveRouter } from "./orchestrator/adaptive-router.js";
+export type { AdaptiveRouterOptions } from "./orchestrator/adaptive-router.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -47,6 +49,7 @@ export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 export { AnomalyDetector } from "./capabilities/anomaly/index.js";
 export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
+export { PortfolioOptimizer } from "./capabilities/portfolio/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -56,6 +59,8 @@ export {
   parseJsonArrayResponse,
   ParseError,
 } from "./utils/json-parser.js";
+export { Tracer, Trace, Span } from "./utils/tracer.js";
+export type { SpanData } from "./utils/tracer.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -107,6 +112,8 @@ export type {
   AgentResult,
   PipelineStage,
   PipelineResult,
+  PositionAllocation,
+  PortfolioAllocation,
 } from "./types/index.js";
 
 export {
@@ -129,4 +136,8 @@ export {
   AccelerationSignal,
   TimeframeAlignment,
   BreadthAssessment,
+  PositionAllocationSchema,
+  PortfolioAllocationSchema,
+  RebalanceAction,
+  RebalanceUrgency,
 } from "./types/index.js";
