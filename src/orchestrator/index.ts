@@ -18,7 +18,7 @@ import type {
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
-import { executeWithFallback } from "./fallback.js";
+import { executeWithFallback, CoreIntentAIError } from "./fallback.js";
 import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js";
 import { AdaptiveRouter, type AdaptiveRouterOptions } from "./adaptive-router.js";
 import { Telemetry } from "../utils/telemetry.js";
@@ -84,6 +84,7 @@ export class Orchestrator {
       request.preferredProvider
     );
 
+    let adaptiveRanked = false;
     if (this.options.adaptiveRouter && !request.preferredProvider) {
       const ranked = this.options.adaptiveRouter.rankProviders(
         request.intent,
@@ -91,6 +92,7 @@ export class Orchestrator {
         providers[0]
       );
       providers = ranked;
+      adaptiveRanked = true;
 
       this.options.telemetry?.record({
         traceId,
@@ -125,6 +127,7 @@ export class Orchestrator {
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
         circuitBreaker: this.options.circuitBreaker ?? undefined,
+        skipRanking: adaptiveRanked,
       });
 
       const latencyMs = Math.round(performance.now() - start);
@@ -188,12 +191,37 @@ export class Orchestrator {
       return response;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      const durationMs = Math.round(performance.now() - start);
+
+      if (err instanceof CoreIntentAIError) {
+        for (const providerErr of err.providerErrors) {
+          this.options.adaptiveRouter?.record({
+            intent: request.intent,
+            provider: providerErr.provider,
+            success: false,
+            latencyMs: 0,
+          });
+
+          this.options.telemetry?.record({
+            traceId,
+            type: "fallback_triggered",
+            provider: providerErr.provider,
+            intent: request.intent,
+            metadata: { error: providerErr.error },
+          });
+        }
+      }
+
+      const lastProvider = err instanceof CoreIntentAIError && err.providerErrors.length > 0
+        ? err.providerErrors[err.providerErrors.length - 1].provider
+        : chain[0];
 
       this.options.telemetry?.record({
         traceId,
         type: "model_response",
+        provider: lastProvider,
         intent: request.intent,
-        durationMs: Math.round(performance.now() - start),
+        durationMs,
         metadata: { success: false, error: err.message },
       });
 
