@@ -18,21 +18,29 @@ import type {
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
-import { executeWithFallback } from "./fallback.js";
+import { executeWithFallback, CoreIntentAIError } from "./fallback.js";
 import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js";
+import { AdaptiveRouter, type AdaptiveRouterOptions } from "./adaptive-router.js";
+import { Telemetry } from "../utils/telemetry.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
   circuitBreaker?: Partial<CircuitBreakerOptions> | false;
+  adaptiveRouter?: Partial<AdaptiveRouterOptions> | false;
+  telemetry?: Telemetry | false;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
 }
 
 export class Orchestrator {
-  private options: Required<Omit<OrchestratorOptions, "circuitBreaker">> & { circuitBreaker: CircuitBreaker | null };
+  private options: Required<Omit<OrchestratorOptions, "circuitBreaker" | "adaptiveRouter" | "telemetry">> & {
+    circuitBreaker: CircuitBreaker | null;
+    adaptiveRouter: AdaptiveRouter | null;
+    telemetry: Telemetry | null;
+  };
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
@@ -42,6 +50,12 @@ export class Orchestrator {
       circuitBreaker: options.circuitBreaker === false
         ? null
         : new CircuitBreaker(typeof options.circuitBreaker === "object" ? options.circuitBreaker : undefined),
+      adaptiveRouter: options.adaptiveRouter === false
+        ? null
+        : new AdaptiveRouter(typeof options.adaptiveRouter === "object" ? options.adaptiveRouter : undefined),
+      telemetry: options.telemetry === false
+        ? null
+        : (options.telemetry instanceof Telemetry ? options.telemetry : new Telemetry()),
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
@@ -52,20 +66,54 @@ export class Orchestrator {
     return this.options.circuitBreaker;
   }
 
+  getAdaptiveRouter(): AdaptiveRouter | null {
+    return this.options.adaptiveRouter;
+  }
+
+  getTelemetry(): Telemetry | null {
+    return this.options.telemetry;
+  }
+
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
-    const providers = getProviderChain(
+    const traceId = this.options.telemetry?.startTrace() ?? "";
+
+    let providers = getProviderChain(
       request.intent,
       request.preferredProvider
     );
 
-    // If fallback is disabled, only use the primary provider
+    let adaptiveRanked = false;
+    if (this.options.adaptiveRouter && !request.preferredProvider) {
+      const ranked = this.options.adaptiveRouter.rankProviders(
+        request.intent,
+        providers,
+        providers[0]
+      );
+      providers = ranked;
+      adaptiveRanked = true;
+
+      this.options.telemetry?.record({
+        traceId,
+        type: "adaptive_route",
+        intent: request.intent,
+        metadata: { rankedProviders: ranked, staticProviders: getProviderChain(request.intent) },
+      });
+    }
+
     const chain = this.options.fallbackEnabled
       ? providers
       : providers.slice(0, 1);
 
     this.options.onRoute(request, chain);
+
+    this.options.telemetry?.record({
+      traceId,
+      type: "route_decision",
+      intent: request.intent,
+      metadata: { chain, fallbackEnabled: this.options.fallbackEnabled },
+    });
 
     const start = performance.now();
 
@@ -79,26 +127,104 @@ export class Orchestrator {
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
         circuitBreaker: this.options.circuitBreaker ?? undefined,
+        skipRanking: adaptiveRanked,
       });
+
+      const latencyMs = Math.round(performance.now() - start);
 
       const response: OrchestrationResponse = {
         content: result.response.content,
         provider: result.response.provider,
         model: result.response.model,
-        latencyMs: Math.round(performance.now() - start),
+        latencyMs,
         tokenUsage: result.response.tokenUsage,
         fallbackUsed: result.fallbackUsed,
         metadata: {
           attemptedProviders: result.attemptedProviders,
           errors: result.errors,
           finishReason: result.response.finishReason,
+          traceId,
         },
       };
+
+      this.options.adaptiveRouter?.record({
+        intent: request.intent,
+        provider: result.response.provider,
+        success: true,
+        latencyMs,
+      });
+
+      if (result.fallbackUsed) {
+        for (const err of result.errors) {
+          this.options.adaptiveRouter?.record({
+            intent: request.intent,
+            provider: err.provider,
+            success: false,
+            latencyMs: 0,
+          });
+
+          this.options.telemetry?.record({
+            traceId,
+            type: "fallback_triggered",
+            provider: err.provider,
+            intent: request.intent,
+            metadata: { error: err.error },
+          });
+        }
+      }
+
+      this.options.telemetry?.record({
+        traceId,
+        type: "model_response",
+        provider: result.response.provider,
+        intent: request.intent,
+        durationMs: latencyMs,
+        metadata: {
+          success: true,
+          model: result.response.model,
+          tokenUsage: result.response.tokenUsage,
+          fallbackUsed: result.fallbackUsed,
+        },
+      });
 
       this.options.onComplete(response);
       return response;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      const durationMs = Math.round(performance.now() - start);
+
+      if (err instanceof CoreIntentAIError) {
+        for (const providerErr of err.providerErrors) {
+          this.options.adaptiveRouter?.record({
+            intent: request.intent,
+            provider: providerErr.provider,
+            success: false,
+            latencyMs: 0,
+          });
+
+          this.options.telemetry?.record({
+            traceId,
+            type: "fallback_triggered",
+            provider: providerErr.provider,
+            intent: request.intent,
+            metadata: { error: providerErr.error },
+          });
+        }
+      }
+
+      const lastProvider = err instanceof CoreIntentAIError && err.providerErrors.length > 0
+        ? err.providerErrors[err.providerErrors.length - 1].provider
+        : chain[0];
+
+      this.options.telemetry?.record({
+        traceId,
+        type: "model_response",
+        provider: lastProvider,
+        intent: request.intent,
+        durationMs,
+        metadata: { success: false, error: err.message },
+      });
+
       this.options.onError(err);
       throw err;
     }
@@ -134,3 +260,5 @@ export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
 export { CircuitBreaker } from "./circuit-breaker.js";
 export type { CircuitState, CircuitBreakerOptions } from "./circuit-breaker.js";
+export { AdaptiveRouter } from "./adaptive-router.js";
+export type { AdaptiveRouterOptions } from "./adaptive-router.js";
