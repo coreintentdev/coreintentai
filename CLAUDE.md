@@ -33,17 +33,21 @@ Based in: New Zealand (NEVER register anything in Australia)
 src/
 ├── config/         # Model configurations, environment-driven
 ├── models/         # Provider adapters (Claude, Grok, Perplexity)
-├── orchestrator/   # Intent router, fallback engine, circuit breaker, core orchestrator
+├── orchestrator/   # Intent router, fallback engine, circuit breaker, adaptive router, core orchestrator
 ├── capabilities/   # Domain-specific AI capabilities
 │   ├── sentiment/  # Market sentiment analysis
 │   ├── signals/    # Trading signal generation
 │   ├── risk/       # Risk assessment framework
 │   ├── research/   # Web-grounded market research
 │   ├── regime/     # Market regime detection
-│   └── correlation/ # Cross-asset correlation analysis
+│   ├── correlation/ # Cross-asset correlation analysis
+│   ├── anomaly/    # Market anomaly detection
+│   ├── consensus/  # Multi-model consensus engine
+│   ├── momentum/   # Momentum scoring and ranking
+│   └── portfolio/  # Portfolio-level intelligence (analysis, rebalancing, stress testing)
 ├── agents/         # Autonomous trading intelligence agents (incl. StrategyAdvisor)
 ├── types/          # Shared TypeScript types + Zod schemas
-├── utils/          # Shared utilities (robust JSON parser)
+├── utils/          # Shared utilities (JSON parser, telemetry)
 └── index.ts        # Public API exports
 ```
 
@@ -52,8 +56,14 @@ src/
 ### Intent-Based Routing
 Every request has an `intent` (reasoning, fast_analysis, research, sentiment, signal, risk). The router maps each intent to the optimal model provider with fallback chains.
 
+### Adaptive Router
+The `AdaptiveRouter` learns from execution history — tracking success rate, latency, and cost per (intent, provider) pair. It uses time-weighted decay and epsilon-greedy exploration to continuously optimize routing decisions. Weights can be exported/imported for persistence across restarts.
+
 ### Fallback Chains + Circuit Breaker
 If a provider fails (timeout, rate limit, error), the system automatically falls through to the next provider. Transient errors trigger retries with exponential backoff (with jitter). A circuit breaker tracks provider health — after repeated failures, the circuit opens and the provider is deprioritized until it recovers. Providers are ranked by health state and latency for adaptive routing.
+
+### Telemetry
+The `Telemetry` system provides production-grade observability — recording all orchestration decisions, model calls, fallbacks, and capability executions as structured trace events. Supports querying by type/provider/intent/trace, real-time subscription, and summary statistics (error rate, fallback rate, p95 latency per provider).
 
 ### Structured Output
 All capability outputs are validated with Zod schemas. The AI layer produces typed, parseable data — not free-form text. A robust JSON parser in `utils/json-parser.ts` handles multiple extraction patterns (raw JSON, markdown fences, embedded JSON) with clear error messages.

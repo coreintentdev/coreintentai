@@ -22,6 +22,8 @@ export type {
   CircuitState,
   CircuitBreakerOptions,
 } from "./orchestrator/circuit-breaker.js";
+export { AdaptiveRouter } from "./orchestrator/adaptive-router.js";
+export type { AdaptiveRouterOptions } from "./orchestrator/adaptive-router.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -47,6 +49,7 @@ export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 export { AnomalyDetector } from "./capabilities/anomaly/index.js";
 export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
+export { PortfolioIntelligence } from "./capabilities/portfolio/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -56,6 +59,12 @@ export {
   parseJsonArrayResponse,
   ParseError,
 } from "./utils/json-parser.js";
+export { Telemetry } from "./utils/telemetry.js";
+export type {
+  TraceEvent,
+  TraceEventType,
+  TelemetrySummary,
+} from "./utils/telemetry.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -107,6 +116,12 @@ export type {
   AgentResult,
   PipelineStage,
   PipelineResult,
+  PortfolioPosition,
+  PortfolioAnalysis,
+  ExposureBreakdown,
+  RebalanceAction,
+  HedgingRecommendation,
+  ScenarioAnalysis,
 } from "./types/index.js";
 
 export {
@@ -129,4 +144,12 @@ export {
   AccelerationSignal,
   TimeframeAlignment,
   BreadthAssessment,
+  PortfolioHealth,
+  RebalancePriority,
+  PortfolioPositionSchema,
+  ExposureBreakdownSchema,
+  RebalanceActionSchema,
+  HedgingRecommendationSchema,
+  ScenarioAnalysisSchema,
+  PortfolioAnalysisSchema,
 } from "./types/index.js";

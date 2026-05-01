@@ -431,6 +431,101 @@ export const MomentumReportSchema = z.object({
 export type MomentumReport = z.infer<typeof MomentumReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Portfolio Intelligence
+// ---------------------------------------------------------------------------
+
+export const PortfolioHealth = z.enum([
+  "excellent",
+  "good",
+  "fair",
+  "poor",
+  "critical",
+]);
+
+export const RebalancePriority = z.enum([
+  "immediate",
+  "soon",
+  "opportunistic",
+]);
+
+export const PortfolioPositionSchema = z.object({
+  ticker: z.string(),
+  shares: z.number(),
+  avgCost: z.number().positive(),
+  currentPrice: z.number().positive(),
+  marketValue: z.number(),
+  weight: z.number().min(0).max(1),
+  pnl: z.number(),
+  pnlPct: z.number(),
+});
+
+export type PortfolioPosition = z.infer<typeof PortfolioPositionSchema>;
+
+export const ExposureBreakdownSchema = z.object({
+  sector: z.record(z.number()),
+  geography: z.record(z.number()),
+  assetClass: z.record(z.number()),
+  factorExposure: z.record(z.number()),
+});
+
+export type ExposureBreakdown = z.infer<typeof ExposureBreakdownSchema>;
+
+export const RebalanceActionSchema = z.object({
+  ticker: z.string(),
+  action: z.enum(["buy", "sell", "hold", "trim", "add"]),
+  currentWeight: z.number().min(0).max(1),
+  targetWeight: z.number().min(0).max(1),
+  sharesToTrade: z.number(),
+  estimatedCost: z.number(),
+  rationale: z.string(),
+  priority: RebalancePriority,
+});
+
+export type RebalanceAction = z.infer<typeof RebalanceActionSchema>;
+
+export const HedgingRecommendationSchema = z.object({
+  strategy: z.string(),
+  instrument: z.string(),
+  rationale: z.string(),
+  estimatedCost: z.string(),
+  priority: RebalancePriority,
+});
+
+export type HedgingRecommendation = z.infer<typeof HedgingRecommendationSchema>;
+
+export const ScenarioAnalysisSchema = z.object({
+  scenario: z.string(),
+  probability: z.number().min(0).max(1),
+  portfolioImpact: z.number(),
+  worstCaseDrawdown: z.number(),
+  recommendations: z.array(z.string()),
+});
+
+export type ScenarioAnalysis = z.infer<typeof ScenarioAnalysisSchema>;
+
+export const PortfolioAnalysisSchema = z.object({
+  totalValue: z.number().positive(),
+  totalPositions: z.number().int().nonnegative(),
+  overallHealth: PortfolioHealth,
+  riskScore: z.number().min(0).max(100),
+  diversificationScore: z.number().min(0).max(100),
+  concentrationRisk: z.object({
+    topHolding: z.object({ ticker: z.string(), weight: z.number() }),
+    top3Weight: z.number().min(0).max(1),
+    herfindahlIndex: z.number().min(0).max(1),
+    assessment: z.string(),
+  }),
+  exposureBreakdown: ExposureBreakdownSchema,
+  rebalanceActions: z.array(RebalanceActionSchema),
+  hedgingRecommendations: z.array(HedgingRecommendationSchema),
+  scenarioAnalysis: z.array(ScenarioAnalysisSchema),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type PortfolioAnalysis = z.infer<typeof PortfolioAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
