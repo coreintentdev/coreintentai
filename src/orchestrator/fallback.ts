@@ -15,6 +15,7 @@ export interface FallbackOptions {
   request: CompletionRequest;
   maxRetries: number;
   circuitBreaker?: CircuitBreaker;
+  preserveProviderOrder?: boolean;
   onAttempt?: (provider: ModelProvider, attempt: number) => void;
   onFailure?: (provider: ModelProvider, error: Error) => void;
 }
@@ -34,9 +35,17 @@ export interface FallbackResult {
 export async function executeWithFallback(
   options: FallbackOptions
 ): Promise<FallbackResult> {
-  const { providers, request, maxRetries, circuitBreaker, onAttempt, onFailure } = options;
+  const {
+    providers,
+    request,
+    maxRetries,
+    circuitBreaker,
+    preserveProviderOrder,
+    onAttempt,
+    onFailure,
+  } = options;
 
-  const chain = circuitBreaker
+  const chain = circuitBreaker && !preserveProviderOrder
     ? circuitBreaker.rankProviders(providers)
     : providers;
 

@@ -18,7 +18,7 @@ import type {
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
-import { executeWithFallback } from "./fallback.js";
+import { CoreIntentAIError, executeWithFallback } from "./fallback.js";
 import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js";
 import { AdaptiveRouter, type AdaptiveRouterOptions } from "./adaptive-router.js";
 import { Telemetry } from "../utils/telemetry.js";
@@ -83,9 +83,13 @@ export class Orchestrator {
       request.intent,
       request.preferredProvider
     );
+    const adaptiveRouter = this.options.adaptiveRouter;
+    const usedAdaptiveRouting = Boolean(
+      adaptiveRouter && !request.preferredProvider
+    );
 
-    if (this.options.adaptiveRouter && !request.preferredProvider) {
-      const ranked = this.options.adaptiveRouter.rankProviders(
+    if (adaptiveRouter && !request.preferredProvider) {
+      const ranked = adaptiveRouter.rankProviders(
         request.intent,
         providers,
         providers[0]
@@ -125,6 +129,7 @@ export class Orchestrator {
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
         circuitBreaker: this.options.circuitBreaker ?? undefined,
+        preserveProviderOrder: usedAdaptiveRouting,
       });
 
       const latencyMs = Math.round(performance.now() - start);
@@ -188,14 +193,43 @@ export class Orchestrator {
       return response;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      const durationMs = Math.round(performance.now() - start);
 
-      this.options.telemetry?.record({
-        traceId,
-        type: "model_response",
-        intent: request.intent,
-        durationMs: Math.round(performance.now() - start),
-        metadata: { success: false, error: err.message },
-      });
+      if (error instanceof CoreIntentAIError && error.providerErrors.length > 0) {
+        for (const providerError of error.providerErrors) {
+          this.options.adaptiveRouter?.record({
+            intent: request.intent,
+            provider: providerError.provider,
+            success: false,
+            latencyMs: 0,
+          });
+
+          this.options.telemetry?.record({
+            traceId,
+            type: "fallback_triggered",
+            provider: providerError.provider,
+            intent: request.intent,
+            metadata: { error: providerError.error },
+          });
+
+          this.options.telemetry?.record({
+            traceId,
+            type: "model_response",
+            provider: providerError.provider,
+            intent: request.intent,
+            durationMs,
+            metadata: { success: false, error: providerError.error },
+          });
+        }
+      } else {
+        this.options.telemetry?.record({
+          traceId,
+          type: "model_response",
+          intent: request.intent,
+          durationMs,
+          metadata: { success: false, error: err.message },
+        });
+      }
 
       this.options.onError(err);
       throw err;
