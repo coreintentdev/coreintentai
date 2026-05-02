@@ -431,6 +431,110 @@ export const MomentumReportSchema = z.object({
 export type MomentumReport = z.infer<typeof MomentumReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Cache Info (prompt caching)
+// ---------------------------------------------------------------------------
+
+export interface CacheInfo {
+  cacheCreationInputTokens: number;
+  cacheReadInputTokens: number;
+}
+
+// ---------------------------------------------------------------------------
+// Portfolio Intelligence
+// ---------------------------------------------------------------------------
+
+export const PortfolioHealthLevel = z.enum([
+  "excellent",
+  "good",
+  "fair",
+  "poor",
+  "critical",
+]);
+
+export const ActionRecommendation = z.enum([
+  "add",
+  "hold",
+  "trim",
+  "exit",
+  "watch",
+]);
+
+export const Urgency = z.enum([
+  "immediate",
+  "this_week",
+  "this_month",
+  "monitor",
+]);
+
+export const PositionIntelligenceSchema = z.object({
+  ticker: z.string(),
+  sentimentBias: z.enum(["bullish", "bearish", "neutral"]),
+  sentimentScore: z.number().min(-1).max(1),
+  momentumScore: z.number().min(0).max(100),
+  anomalyAlert: z.boolean(),
+  riskContribution: z.number().min(0).max(100),
+  keyInsight: z.string(),
+  actionRecommendation: ActionRecommendation,
+  confidence: z.number().min(0).max(1),
+});
+
+export type PositionIntelligence = z.infer<typeof PositionIntelligenceSchema>;
+
+export const ScenarioAnalysisSchema = z.object({
+  scenario: z.enum(["bull", "base", "bear"]),
+  probability: z.number().min(0).max(1),
+  portfolioImpactPct: z.number(),
+  trigger: z.string(),
+  topMovers: z.array(
+    z.object({
+      ticker: z.string(),
+      impactPct: z.number(),
+    })
+  ),
+  hedgingSuggestion: z.string(),
+});
+
+export type ScenarioAnalysis = z.infer<typeof ScenarioAnalysisSchema>;
+
+export const PortfolioIntelligenceSchema = z.object({
+  portfolioHealthScore: z.number().min(0).max(100),
+  healthLevel: PortfolioHealthLevel,
+  regimeContext: z.object({
+    currentRegime: z.string(),
+    regimeConfidence: z.number().min(0).max(1),
+    regimeImplication: z.string(),
+  }),
+  positions: z.array(PositionIntelligenceSchema),
+  riskDashboard: z.object({
+    overallRiskScore: z.number().min(0).max(100),
+    diversificationScore: z.number().min(0).max(1),
+    concentrationRisk: z.string(),
+    tailRiskExposure: z.string(),
+    maxDrawdownEstimate: z.string(),
+  }),
+  correlationInsights: z.object({
+    highlyCorrelatedPairs: z.array(z.string()),
+    diversificationGaps: z.array(z.string()),
+    hiddenRisks: z.array(z.string()),
+  }),
+  actionPlan: z.array(
+    z.object({
+      priority: z.number().int().positive(),
+      action: z.string(),
+      ticker: z.string().optional(),
+      rationale: z.string(),
+      urgency: Urgency,
+    })
+  ),
+  scenarios: z.array(ScenarioAnalysisSchema),
+  reviewTriggers: z.array(z.string()),
+  executiveSummary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type PortfolioIntelligence = z.infer<typeof PortfolioIntelligenceSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
