@@ -97,6 +97,16 @@ describe("Tracer", () => {
   });
 
   describe("getSummary", () => {
+    it("returns zeroed summary on empty tracer", () => {
+      const tracer = new Tracer("empty-trace");
+      const summary = tracer.getSummary();
+      expect(summary.traceId).toBe("empty-trace");
+      expect(summary.totalDurationMs).toBe(0);
+      expect(summary.spanCount).toBe(0);
+      expect(summary.errors).toBe(0);
+      expect(summary.providerLatencies).toEqual({});
+    });
+
     it("summarizes trace with span count and errors", () => {
       vi.useRealTimers();
       const tracer = new Tracer("test-trace");

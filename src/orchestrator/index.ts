@@ -132,12 +132,24 @@ export class Orchestrator {
         fallbackSpan.provider = result.response.provider;
       }
 
-      this.options.adaptiveRouter?.recordOutcome(
-        result.response.provider,
-        request.intent,
-        true,
-        result.response.latencyMs
-      );
+      if (this.options.adaptiveRouter) {
+        for (const err of result.errors) {
+          this.options.adaptiveRouter.recordOutcome(
+            err.provider,
+            request.intent,
+            false,
+            this.options.defaultTimeoutMs
+          );
+        }
+        this.options.adaptiveRouter.recordOutcome(
+          result.response.provider,
+          request.intent,
+          true,
+          result.response.latencyMs
+        );
+      }
+
+      if (rootSpan) tracer!.endSpan(rootSpan, "ok");
 
       const response: OrchestrationResponse = {
         content: result.response.content,
@@ -156,8 +168,6 @@ export class Orchestrator {
           ...(tracer && { trace: tracer.getSummary() }),
         },
       };
-
-      if (rootSpan) tracer!.endSpan(rootSpan, "ok");
       this.options.onComplete(response);
       return response;
     } catch (error) {

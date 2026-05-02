@@ -61,6 +61,16 @@ export class Tracer {
     errors: number;
     providerLatencies: Record<string, number>;
   } {
+    if (this.spans.length === 0) {
+      return {
+        traceId: this.traceId,
+        totalDurationMs: 0,
+        spanCount: 0,
+        errors: 0,
+        providerLatencies: {},
+      };
+    }
+
     const errors = this.spans.filter((s) => s.status === "error").length;
     const firstStart = Math.min(...this.spans.map((s) => s.startTime));
     const lastEnd = Math.max(
