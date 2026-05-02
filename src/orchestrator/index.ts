@@ -139,6 +139,23 @@ export class Orchestrator {
         result.response.latencyMs
       );
 
+      const failedProviders = new Set(
+        result.errors
+          .map((entry) => entry.provider)
+          .filter((provider) => provider !== result.response.provider)
+      );
+      for (const provider of failedProviders) {
+        this.options.adaptiveRouter?.recordOutcome(
+          provider,
+          request.intent,
+          false,
+          this.options.defaultTimeoutMs
+        );
+      }
+
+      if (rootSpan) tracer!.endSpan(rootSpan, "ok");
+      const traceSummary = tracer?.getSummary();
+
       const response: OrchestrationResponse = {
         content: result.response.content,
         provider: result.response.provider,
@@ -153,11 +170,10 @@ export class Orchestrator {
           ...(result.response.cacheInfo && {
             cacheInfo: result.response.cacheInfo,
           }),
-          ...(tracer && { trace: tracer.getSummary() }),
+          ...(traceSummary && { trace: traceSummary }),
         },
       };
 
-      if (rootSpan) tracer!.endSpan(rootSpan, "ok");
       this.options.onComplete(response);
       return response;
     } catch (error) {
