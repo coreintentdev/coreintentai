@@ -24,11 +24,22 @@ export class ClaudeAdapter extends BaseModelAdapter {
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
     const start = performance.now();
 
+    const systemContent =
+      request.systemPrompt && request.enableCaching !== false
+        ? [
+            {
+              type: "text" as const,
+              text: request.systemPrompt,
+              cache_control: { type: "ephemeral" as const },
+            },
+          ]
+        : request.systemPrompt || "";
+
     const response = await this.client.messages.create({
       model: this.config.model,
       max_tokens: request.maxTokens ?? this.config.maxTokens,
       temperature: request.temperature ?? this.config.temperature,
-      system: request.systemPrompt ?? "",
+      system: systemContent,
       messages: [{ role: "user", content: request.prompt }],
     });
 
@@ -36,6 +47,10 @@ export class ClaudeAdapter extends BaseModelAdapter {
 
     const textBlock = response.content.find((b) => b.type === "text");
     const content = textBlock ? textBlock.text : "";
+
+    const usage = response.usage as unknown as Record<string, number>;
+    const cacheCreation = usage.cache_creation_input_tokens ?? 0;
+    const cacheRead = usage.cache_read_input_tokens ?? 0;
 
     return {
       content,
@@ -49,6 +64,13 @@ export class ClaudeAdapter extends BaseModelAdapter {
       },
       latencyMs,
       finishReason: response.stop_reason ?? "unknown",
+      cacheInfo:
+        cacheCreation > 0 || cacheRead > 0
+          ? {
+              cacheCreationInputTokens: cacheCreation,
+              cacheReadInputTokens: cacheRead,
+            }
+          : undefined,
     };
   }
 

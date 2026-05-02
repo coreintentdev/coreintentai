@@ -14,34 +14,58 @@
  */
 
 import type {
+  ModelProvider,
   OrchestrationRequest,
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
 import { executeWithFallback } from "./fallback.js";
 import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js";
+import { AdaptiveRouter, type AdaptiveRouterOptions } from "./adaptive-router.js";
+import { Tracer } from "../utils/trace.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
   circuitBreaker?: Partial<CircuitBreakerOptions> | false;
+  adaptiveRouter?: Partial<AdaptiveRouterOptions> | false;
+  enableTracing?: boolean;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
 }
 
 export class Orchestrator {
-  private options: Required<Omit<OrchestratorOptions, "circuitBreaker">> & { circuitBreaker: CircuitBreaker | null };
+  private options: Required<
+    Omit<OrchestratorOptions, "circuitBreaker" | "adaptiveRouter">
+  > & {
+    circuitBreaker: CircuitBreaker | null;
+    adaptiveRouter: AdaptiveRouter | null;
+  };
 
   constructor(options: OrchestratorOptions = {}) {
     this.options = {
       maxRetries: options.maxRetries ?? 2,
       defaultTimeoutMs: options.defaultTimeoutMs ?? 30_000,
       fallbackEnabled: options.fallbackEnabled ?? true,
-      circuitBreaker: options.circuitBreaker === false
-        ? null
-        : new CircuitBreaker(typeof options.circuitBreaker === "object" ? options.circuitBreaker : undefined),
+      enableTracing: options.enableTracing ?? false,
+      circuitBreaker:
+        options.circuitBreaker === false
+          ? null
+          : new CircuitBreaker(
+              typeof options.circuitBreaker === "object"
+                ? options.circuitBreaker
+                : undefined
+            ),
+      adaptiveRouter:
+        options.adaptiveRouter === false
+          ? null
+          : new AdaptiveRouter(
+              typeof options.adaptiveRouter === "object"
+                ? options.adaptiveRouter
+                : undefined
+            ),
       onRoute: options.onRoute ?? (() => {}),
       onComplete: options.onComplete ?? (() => {}),
       onError: options.onError ?? (() => {}),
@@ -52,15 +76,29 @@ export class Orchestrator {
     return this.options.circuitBreaker;
   }
 
+  getAdaptiveRouter(): AdaptiveRouter | null {
+    return this.options.adaptiveRouter;
+  }
+
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
-    const providers = getProviderChain(
-      request.intent,
-      request.preferredProvider
-    );
+    const tracer = this.options.enableTracing ? new Tracer() : null;
+    const rootSpan = tracer?.startSpan("orchestrator.execute", undefined, {
+      intent: request.intent,
+    });
 
-    // If fallback is disabled, only use the primary provider
+    let providers: ModelProvider[];
+    if (this.options.adaptiveRouter) {
+      const route = this.options.adaptiveRouter.resolveRoute(
+        request.intent,
+        request.preferredProvider
+      );
+      providers = [route.primary, ...route.fallbacks];
+    } else {
+      providers = getProviderChain(request.intent, request.preferredProvider);
+    }
+
     const chain = this.options.fallbackEnabled
       ? providers
       : providers.slice(0, 1);
@@ -70,6 +108,11 @@ export class Orchestrator {
     const start = performance.now();
 
     try {
+      const fallbackSpan = tracer?.startSpan(
+        "fallback.execute",
+        rootSpan?.spanId
+      );
+
       const result = await executeWithFallback({
         providers: chain,
         request: {
@@ -80,6 +123,33 @@ export class Orchestrator {
         maxRetries: request.maxRetries ?? this.options.maxRetries,
         circuitBreaker: this.options.circuitBreaker ?? undefined,
       });
+
+      if (fallbackSpan) {
+        tracer!.endSpan(fallbackSpan, "ok", {
+          provider: result.response.provider,
+          fallbackUsed: result.fallbackUsed,
+        });
+        fallbackSpan.provider = result.response.provider;
+      }
+
+      if (this.options.adaptiveRouter) {
+        for (const err of result.errors) {
+          this.options.adaptiveRouter.recordOutcome(
+            err.provider,
+            request.intent,
+            false,
+            this.options.defaultTimeoutMs
+          );
+        }
+        this.options.adaptiveRouter.recordOutcome(
+          result.response.provider,
+          request.intent,
+          true,
+          result.response.latencyMs
+        );
+      }
+
+      if (rootSpan) tracer!.endSpan(rootSpan, "ok");
 
       const response: OrchestrationResponse = {
         content: result.response.content,
@@ -92,32 +162,38 @@ export class Orchestrator {
           attemptedProviders: result.attemptedProviders,
           errors: result.errors,
           finishReason: result.response.finishReason,
+          ...(result.response.cacheInfo && {
+            cacheInfo: result.response.cacheInfo,
+          }),
+          ...(tracer && { trace: tracer.getSummary() }),
         },
       };
-
       this.options.onComplete(response);
       return response;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+
+      for (const provider of chain) {
+        this.options.adaptiveRouter?.recordOutcome(
+          provider,
+          request.intent,
+          false,
+          this.options.defaultTimeoutMs
+        );
+      }
+
+      if (rootSpan) tracer!.endSpan(rootSpan, "error");
       this.options.onError(err);
       throw err;
     }
   }
 
-  /**
-   * Execute multiple requests in parallel across different providers.
-   * Useful for getting multiple perspectives on the same data.
-   */
   async fan(
     requests: OrchestrationRequest[]
   ): Promise<OrchestrationResponse[]> {
     return Promise.all(requests.map((r) => this.execute(r)));
   }
 
-  /**
-   * Execute the same prompt against multiple providers and return all results.
-   * Useful for consensus-building or comparing model outputs.
-   */
   async consensus(
     request: Omit<OrchestrationRequest, "preferredProvider">,
     providers: Array<"claude" | "grok" | "perplexity">
@@ -134,3 +210,5 @@ export { resolveRoute, getProviderChain } from "./router.js";
 export { executeWithFallback, CoreIntentAIError } from "./fallback.js";
 export { CircuitBreaker } from "./circuit-breaker.js";
 export type { CircuitState, CircuitBreakerOptions } from "./circuit-breaker.js";
+export { AdaptiveRouter } from "./adaptive-router.js";
+export type { AdaptiveRouterOptions } from "./adaptive-router.js";

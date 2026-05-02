@@ -5,7 +5,7 @@
  * Ensures uniform interaction regardless of the underlying provider.
  */
 
-import type { ModelConfig, ModelProvider, TokenUsage } from "../types/index.js";
+import type { ModelConfig, ModelProvider, TokenUsage, CacheInfo } from "../types/index.js";
 
 export interface CompletionRequest {
   systemPrompt?: string;
@@ -14,6 +14,7 @@ export interface CompletionRequest {
   temperature?: number;
   jsonMode?: boolean;
   timeoutMs?: number;
+  enableCaching?: boolean;
 }
 
 export interface CompletionResponse {
@@ -23,6 +24,7 @@ export interface CompletionResponse {
   tokenUsage: TokenUsage;
   latencyMs: number;
   finishReason: string;
+  cacheInfo?: CacheInfo;
 }
 
 export abstract class BaseModelAdapter {
