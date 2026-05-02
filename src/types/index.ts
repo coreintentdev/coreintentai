@@ -431,6 +431,54 @@ export const MomentumReportSchema = z.object({
 export type MomentumReport = z.infer<typeof MomentumReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Portfolio Optimization
+// ---------------------------------------------------------------------------
+
+export const RebalanceAction = z.enum(["buy", "sell", "trim", "add"]);
+
+export const RebalanceUrgency = z.enum(["none", "low", "moderate", "high", "critical"]);
+
+export const PositionAllocationSchema = z.object({
+  ticker: z.string(),
+  currentWeight: z.number().min(0).max(1),
+  targetWeight: z.number().min(0).max(1),
+  action: z.enum(["increase", "decrease", "hold", "initiate", "exit"]),
+  sizingRationale: z.string(),
+  riskBudget: z.number().min(0).max(100),
+  conviction: z.number().min(0).max(1),
+  signals: z.object({
+    sentiment: z.enum(["bullish", "bearish", "neutral"]).optional(),
+    momentum: z.enum(["positive", "negative", "neutral"]).optional(),
+    regime: z.string().optional(),
+    riskLevel: z.string().optional(),
+  }),
+});
+
+export type PositionAllocation = z.infer<typeof PositionAllocationSchema>;
+
+export const PortfolioAllocationSchema = z.object({
+  positions: z.array(PositionAllocationSchema),
+  cashAllocation: z.number().min(0).max(1),
+  totalRiskBudget: z.number().min(0).max(100),
+  diversificationScore: z.number().min(0).max(1),
+  regimeContext: z.string(),
+  rebalancingUrgency: RebalanceUrgency,
+  rebalancingActions: z.array(
+    z.object({
+      ticker: z.string(),
+      action: RebalanceAction,
+      targetDelta: z.number(),
+      rationale: z.string(),
+      priority: z.number().min(1).max(5),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type PortfolioAllocation = z.infer<typeof PortfolioAllocationSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
