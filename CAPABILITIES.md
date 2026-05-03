@@ -289,7 +289,7 @@ Executes requests across provider chains with retry logic.
 
 ### Autonomous Trading Intelligence Agents
 
-Three specialized agents that can operate independently or chain together:
+Five specialized agents that can operate independently or chain together:
 
 #### MarketAnalyst Agent
 **Pipeline:** Research → Sentiment Read → Deep Synthesis
@@ -311,8 +311,20 @@ Generates detailed trade execution plans with specific order types, prices, quan
 
 Meta-agent that sits above all other agents and capabilities. Gathers intelligence in parallel (sentiment + regime), synthesizes into a coherent strategy, then stress-tests it. Output includes: Market Regime & Context, Conviction Matrix, Strategy Recommendation, Scenario Analysis (bull/bear/base), Risk Budget, Execution Priority, Review Triggers.
 
+#### PortfolioWatchdog Agent
+**Pipeline:** 5-stream Parallel Scan → Cross-reference Synthesis → Action Plan
+
+Real-time portfolio surveillance across all intelligence dimensions simultaneously. Launches 5 concurrent scans (narrative, liquidity, anomaly, regime, correlation) and synthesizes into a single actionable health report. Designed for the 4am check — scan in 30 seconds, know immediately if something needs attention.
+
+**Methods:**
+- `execute()` — Full multi-dimensional health scan
+- `quickScan()` — Fast single-pass for routine monitoring
+- `threatAnalysis()` — Deep dive when a specific concern is flagged
+
+Output includes: Health Score (0-100), Alert Level, Top Threats, Narrative Shifts, Liquidity Warnings, Anomalies, Regime Status, Immediate Actions, Watch List.
+
 #### Full Trading Pipeline
-`runTradingPipeline()` — Chains all four agents:
+`runTradingPipeline()` — Chains four agents:
 1. MarketAnalyst evaluates the opportunity
 2. RiskManager assesses the risk
 3. StrategyAdvisor synthesizes analysis + risk into strategic recommendation
@@ -326,7 +338,7 @@ Meta-agent that sits above all other agents and capabilities. Gathers intelligen
 - **Zod** — Runtime schema validation for all AI outputs
 - **Anthropic SDK** — Native Claude integration
 - **OpenAI SDK** — Grok and Perplexity via OpenAI-compatible APIs
-- **Vitest** — Fast testing with 306+ tests
+- **Vitest** — Fast testing with 314+ tests
 - **Zero external runtime dependencies** beyond the AI SDKs
 
 ---
