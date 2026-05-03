@@ -47,6 +47,8 @@ export { CorrelationAnalyzer } from "./capabilities/correlation/index.js";
 export { AnomalyDetector } from "./capabilities/anomaly/index.js";
 export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
+export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
+export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -102,6 +104,14 @@ export type {
   ConsensusResult,
   MomentumRanking,
   MomentumReport,
+  Narrative,
+  NarrativeReport,
+  NarrativeCategoryType,
+  NarrativeStageType,
+  LiquidityAssessment,
+  LiquidityRegimeType,
+  ExecutionPlan,
+  ExecutionUrgencyType,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -129,4 +139,13 @@ export {
   AccelerationSignal,
   TimeframeAlignment,
   BreadthAssessment,
+  NarrativeSchema,
+  NarrativeReportSchema,
+  NarrativeCategory,
+  NarrativeStage,
+  LiquidityRegime,
+  LiquidityAssessmentSchema,
+  ExecutionUrgency,
+  ExecutionAlgorithm,
+  ExecutionPlanSchema,
 } from "./types/index.js";

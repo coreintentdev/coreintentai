@@ -330,6 +330,73 @@ export const AnomalyReportSchema = z.object({
 export type AnomalyReport = z.infer<typeof AnomalyReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Liquidity Intelligence
+// ---------------------------------------------------------------------------
+
+export const LiquidityRegime = z.enum(["abundant", "normal", "thin", "crisis"]);
+
+export type LiquidityRegimeType = z.infer<typeof LiquidityRegime>;
+
+export const ExecutionUrgency = z.enum(["patient", "normal", "urgent", "immediate"]);
+
+export type ExecutionUrgencyType = z.infer<typeof ExecutionUrgency>;
+
+export const LiquidityAssessmentSchema = z.object({
+  ticker: z.string(),
+  regime: LiquidityRegime,
+  depthScore: z.number().min(0).max(100),
+  spreadBps: z.number().min(0),
+  averageDailyVolume: z.number().min(0),
+  relativeLiquidity: z.number().min(0).max(1),
+  timeOfDayEffect: z.string(),
+  eventProximity: z.object({
+    nearby: z.boolean(),
+    description: z.string(),
+  }),
+  darkPoolPct: z.number().min(0).max(1),
+  executionWindows: z.array(
+    z.object({
+      window: z.string(),
+      quality: z.enum(["excellent", "good", "fair", "poor"]),
+      reason: z.string(),
+    })
+  ),
+  risks: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type LiquidityAssessment = z.infer<typeof LiquidityAssessmentSchema>;
+
+export const ExecutionAlgorithm = z.enum(["TWAP", "VWAP", "IS", "Iceberg", "Block"]);
+
+export const ExecutionPlanSchema = z.object({
+  ticker: z.string(),
+  action: z.enum(["buy", "sell"]),
+  quantity: z.number().positive(),
+  urgency: ExecutionUrgency,
+  algorithm: ExecutionAlgorithm,
+  expectedSlippageBps: z.number().min(0),
+  optimalTiming: z.string(),
+  splitStrategy: z.array(
+    z.object({
+      tranche: z.number().int().positive(),
+      quantity: z.number().positive(),
+      timing: z.string(),
+      venue: z.string(),
+      limitOffset: z.string().optional(),
+    })
+  ),
+  darkPoolRecommendation: z.string(),
+  risks: z.array(z.string()),
+  contingencies: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type ExecutionPlan = z.infer<typeof ExecutionPlanSchema>;
+
+// ---------------------------------------------------------------------------
 // Multi-Model Consensus
 // ---------------------------------------------------------------------------
 
@@ -429,6 +496,80 @@ export const MomentumReportSchema = z.object({
 });
 
 export type MomentumReport = z.infer<typeof MomentumReportSchema>;
+
+// ---------------------------------------------------------------------------
+// Narrative Intelligence
+// ---------------------------------------------------------------------------
+
+export const NarrativeCategory = z.enum([
+  "macro",
+  "sector",
+  "company",
+  "geopolitical",
+  "structural",
+  "thematic",
+]);
+
+export type NarrativeCategoryType = z.infer<typeof NarrativeCategory>;
+
+export const NarrativeStage = z.enum([
+  "emerging",
+  "accelerating",
+  "consensus",
+  "exhausted",
+  "reversing",
+]);
+
+export type NarrativeStageType = z.infer<typeof NarrativeStage>;
+
+export const NarrativeSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: NarrativeCategory,
+  stage: NarrativeStage,
+  strength: z.number().min(0).max(100),
+  conviction: z.number().min(0).max(1),
+  freshness: z.number().min(0).max(1),
+  crowding: z.number().min(0).max(1),
+  priceReflexivity: z.number().min(0).max(1),
+  description: z.string(),
+  keyDrivers: z.array(z.string()),
+  supportingEvidence: z.array(z.string()),
+  counterArguments: z.array(z.string()),
+  affectedTickers: z.array(z.string()),
+  relatedNarratives: z.array(z.string()),
+  tradeImplication: z.string(),
+});
+
+export type Narrative = z.infer<typeof NarrativeSchema>;
+
+export const NarrativeReportSchema = z.object({
+  ticker: z.string().optional(),
+  sector: z.string().optional(),
+  narratives: z.array(NarrativeSchema),
+  dominantNarrative: z.string(),
+  narrativeConflicts: z.array(
+    z.object({
+      narrativeA: z.string(),
+      narrativeB: z.string(),
+      tension: z.string(),
+      resolution: z.string().optional(),
+    })
+  ),
+  shiftSignals: z.array(
+    z.object({
+      narrative: z.string(),
+      signal: z.string(),
+      direction: z.enum(["advancing", "stalling", "reversing"]),
+      confidence: z.number().min(0).max(1),
+    })
+  ),
+  tradingImplications: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type NarrativeReport = z.infer<typeof NarrativeReportSchema>;
 
 // ---------------------------------------------------------------------------
 // Agent System

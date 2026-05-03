@@ -112,6 +112,179 @@ Web-grounded market research powered by Perplexity with Claude analysis fallback
 
 ---
 
+### 5. Market Regime Detection
+**Class:** `RegimeDetector`
+
+Classifies the current market regime and predicts transitions.
+
+**Methods:**
+- `detect()` — Classify current regime with transition probabilities
+- `trackTransition()` — Monitor a regime for signs of change
+- `strategyFit()` — Assess which strategies fit the current regime
+
+**Output:** Structured `MarketRegime` with:
+- 7 regime types (trending_up, trending_down, ranging, volatile_expansion, compression, crisis, rotation)
+- Volatility regime classification (low/normal/elevated/extreme)
+- Trend strength and regime age
+- Transition probabilities with triggers
+- Strategy implications (recommended, avoid, position sizing, stop approach)
+
+---
+
+### 6. Cross-Asset Correlation Analysis
+**Class:** `CorrelationAnalyzer`
+
+Detects correlation structures, clusters, and hidden diversification risks.
+
+**Methods:**
+- `analyzeMatrix()` — Full N×N correlation matrix with clustering
+- `detectBreak()` — Identify correlation breakdowns (regime change signal)
+- `diversificationCheck()` — Score portfolio diversification quality
+
+**Output:** Structured `CorrelationMatrix` with:
+- Pairwise correlations with strength classification
+- Lead-lag relationships
+- Asset clusters with drivers
+- Diversification score (0-1)
+- Hidden risk identification
+
+---
+
+### 7. Anomaly Detection
+**Class:** `AnomalyDetector`
+
+Detects statistically unusual market activity that may signal informed trading, regime shifts, or exploitable mispricings.
+
+**Methods:**
+- `detect()` — Scan a single ticker for anomalies
+- `multiAssetScan()` — Scan multiple tickers for correlated anomalies
+- `deepDive()` — Deep analysis of a specific detected anomaly
+
+**Anomaly Categories:** volume_spike, price_dislocation, volatility_anomaly, correlation_break, options_flow, order_flow, fundamental_divergence, cross_asset_signal
+
+**Output:** Structured `AnomalyReport` with:
+- Per-anomaly severity scoring (0-100)
+- Evidence and possible causes
+- Historical precedent matching
+- Alert level classification (none/watch/alert/critical)
+- Cross-asset signal detection
+
+---
+
+### 8. Multi-Model Consensus Engine
+**Class:** `ConsensusEngine`
+
+Queries multiple AI models with the same question, then synthesizes their responses into a single high-confidence verdict.
+
+**Methods:**
+- `synthesize()` — General multi-model consensus with synthesis
+- `tradingConsensus()` — Trading-specific consensus with market context
+- `quickConsensus()` — Fast 2-model (Claude + Grok) consensus
+
+**Output:** Structured `ConsensusResult` with:
+- Unified verdict with confidence score
+- Agreement level (unanimous → contradictory)
+- Per-model contributions with unique insights
+- Key agreements and disagreements with resolutions
+- Blind spot identification
+- Actionable insight synthesis
+
+---
+
+### 9. Momentum Scoring
+**Class:** `MomentumScorer`
+
+Ranks assets by composite momentum score and detects momentum shifts.
+
+**Methods:**
+- `rank()` — Rank tickers by composite momentum (price + volume + relative strength)
+- `screen()` — Screen a universe for momentum setups matching criteria
+- `detectShift()` — Detect if a ticker is experiencing momentum acceleration or exhaustion
+- `crossValidatedRank()` — Multi-model ranking (Grok speed + Claude depth) for high-conviction picks
+
+**Output:** Structured `MomentumReport` with:
+- Per-ticker composite score, rank, and component breakdown
+- Acceleration signal (accelerating/steady/decelerating/reversing)
+- Timeframe alignment assessment
+- Exhaustion risk scoring
+- Sector rotation map (leading/lagging/emerging)
+- Market breadth score and assessment
+
+---
+
+### 10. Narrative Intelligence
+**Class:** `NarrativeIntelligence`
+
+Detects, tracks, and scores the stories and themes driving price action. Markets are narrative-driven machines — this capability makes those narratives explicit and quantifiable.
+
+**Methods:**
+- `detect()` — Identify all active narratives driving a ticker
+- `scoreStrength()` — Score a specific narrative's current power
+- `detectShifts()` — Identify when narratives are changing or dying
+- `mapSector()` — Map all active narratives across a market sector
+- `crossValidate()` — Multi-model narrative detection for high-conviction identification
+
+**Narrative Categories:** macro, sector, company, geopolitical, structural, thematic
+
+**Narrative Lifecycle:** emerging → accelerating → consensus → exhausted → reversing
+
+**Output:** Structured `NarrativeReport` with:
+- Per-narrative scoring: strength (0-100), conviction (0-1), freshness (0-1), crowding (0-1), price reflexivity (0-1)
+- Dominant narrative identification
+- Narrative conflicts and shift signals
+- Trading implications per narrative
+- Related narrative mapping
+
+---
+
+### 11. Liquidity Intelligence
+**Class:** `LiquidityAnalyzer`
+
+Assesses market microstructure conditions, detects liquidity traps, and provides execution intelligence for optimal trade execution.
+
+**Methods:**
+- `assess()` — Assess current liquidity conditions for a ticker
+- `executionRisk()` — Evaluate execution risk for a specific trade size
+- `detectTraps()` — Identify liquidity traps (markets that appear liquid but are fragile)
+- `microstructure()` — Deep microstructure analysis (order flow, information asymmetry, market maker behavior)
+- `optimalExecution()` — Multi-model execution planning (Grok + Claude fan-out)
+
+**Liquidity Regimes:** abundant, normal, thin, crisis
+
+**Output:** Structured `LiquidityAssessment` + `ExecutionPlan` with:
+- Regime classification and depth scoring
+- Spread in basis points, dark pool percentage
+- Optimal execution windows with quality ratings
+- Algorithm selection (TWAP/VWAP/IS/Iceberg/Block)
+- Split strategy with per-tranche routing
+- Expected slippage estimation
+- Contingency planning
+
+---
+
+## Resilience Layer
+
+### Circuit Breaker
+Tracks provider health and automatically deprioritizes failing providers.
+
+**Features:**
+- Three states: closed (healthy), open (failing), half_open (recovering)
+- Configurable failure threshold and reset timeout
+- Latency tracking with sliding window
+- Adaptive provider ranking by health + latency
+- Graceful degradation — never hard-fails if any provider is available
+
+### Fallback Engine
+Executes requests across provider chains with retry logic.
+
+**Features:**
+- Exponential backoff with jitter on transient errors
+- Transient error detection (timeouts, rate limits, 5xx, network errors)
+- Per-provider attempt tracking
+- Full error chain reporting for diagnostics
+
+---
+
 ## Agent System
 
 ### Autonomous Trading Intelligence Agents
@@ -133,11 +306,17 @@ Autonomous risk evaluation covering tail risks, correlations, drawdown scenarios
 
 Generates detailed trade execution plans with specific order types, prices, quantities, and contingencies. Output includes: Trade Thesis, Entry Plan, Exit Plan, Position Sizing, Execution Timeline, Contingencies, and Order Specifications.
 
+#### StrategyAdvisor Agent
+**Pipeline:** Multi-source Gather → Deep Synthesis → Stress Test
+
+Meta-agent that sits above all other agents and capabilities. Gathers intelligence in parallel (sentiment + regime), synthesizes into a coherent strategy, then stress-tests it. Output includes: Market Regime & Context, Conviction Matrix, Strategy Recommendation, Scenario Analysis (bull/bear/base), Risk Budget, Execution Priority, Review Triggers.
+
 #### Full Trading Pipeline
-`runTradingPipeline()` — Chains all three agents:
+`runTradingPipeline()` — Chains all four agents:
 1. MarketAnalyst evaluates the opportunity
 2. RiskManager assesses the risk
-3. TradeExecutor generates the execution plan
+3. StrategyAdvisor synthesizes analysis + risk into strategic recommendation
+4. TradeExecutor generates the execution plan
 
 ---
 
@@ -147,7 +326,7 @@ Generates detailed trade execution plans with specific order types, prices, quan
 - **Zod** — Runtime schema validation for all AI outputs
 - **Anthropic SDK** — Native Claude integration
 - **OpenAI SDK** — Grok and Perplexity via OpenAI-compatible APIs
-- **Vitest** — Fast testing with 45+ tests
+- **Vitest** — Fast testing with 306+ tests
 - **Zero external runtime dependencies** beyond the AI SDKs
 
 ---

@@ -34,13 +34,18 @@ src/
 ├── config/         # Model configurations, environment-driven
 ├── models/         # Provider adapters (Claude, Grok, Perplexity)
 ├── orchestrator/   # Intent router, fallback engine, circuit breaker, core orchestrator
-├── capabilities/   # Domain-specific AI capabilities
+├── capabilities/   # Domain-specific AI capabilities (11 modules)
 │   ├── sentiment/  # Market sentiment analysis
 │   ├── signals/    # Trading signal generation
 │   ├── risk/       # Risk assessment framework
 │   ├── research/   # Web-grounded market research
 │   ├── regime/     # Market regime detection
-│   └── correlation/ # Cross-asset correlation analysis
+│   ├── correlation/ # Cross-asset correlation analysis
+│   ├── anomaly/    # Market anomaly detection
+│   ├── consensus/  # Multi-model consensus engine
+│   ├── momentum/   # Momentum scoring and ranking
+│   ├── narrative/  # Narrative intelligence (story-driven markets)
+│   └── liquidity/  # Liquidity assessment and execution intelligence
 ├── agents/         # Autonomous trading intelligence agents (incl. StrategyAdvisor)
 ├── types/          # Shared TypeScript types + Zod schemas
 ├── utils/          # Shared utilities (robust JSON parser)
