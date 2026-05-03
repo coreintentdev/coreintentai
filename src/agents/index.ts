@@ -9,8 +9,9 @@ import { MarketAnalystAgent } from "./market-analyst.js";
 import { RiskManagerAgent } from "./risk-manager.js";
 import { TradeExecutorAgent } from "./trade-executor.js";
 import { StrategyAdvisorAgent } from "./strategy-advisor.js";
+import { PortfolioWatchdogAgent } from "./portfolio-watchdog.js";
 
-export type AgentName = "MarketAnalyst" | "RiskManager" | "TradeExecutor" | "StrategyAdvisor";
+export type AgentName = "MarketAnalyst" | "RiskManager" | "TradeExecutor" | "StrategyAdvisor" | "PortfolioWatchdog";
 
 /**
  * Create all agents with a shared orchestrator instance.
@@ -23,6 +24,7 @@ export function createAgentTeam(orchestrator?: Orchestrator) {
     riskManager: new RiskManagerAgent(orch),
     executor: new TradeExecutorAgent(orch),
     strategist: new StrategyAdvisorAgent(orch),
+    watchdog: new PortfolioWatchdogAgent(orch),
   };
 }
 
@@ -90,3 +92,4 @@ export { MarketAnalystAgent } from "./market-analyst.js";
 export { RiskManagerAgent } from "./risk-manager.js";
 export { TradeExecutorAgent } from "./trade-executor.js";
 export { StrategyAdvisorAgent } from "./strategy-advisor.js";
+export { PortfolioWatchdogAgent } from "./portfolio-watchdog.js";

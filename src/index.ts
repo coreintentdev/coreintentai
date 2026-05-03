@@ -70,6 +70,7 @@ export {
   RiskManagerAgent,
   TradeExecutorAgent,
   StrategyAdvisorAgent,
+  PortfolioWatchdogAgent,
 } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
