@@ -49,6 +49,8 @@ export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
 export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
+export { VolatilityIntelligence } from "./capabilities/volatility/index.js";
+export { EventIntelligence } from "./capabilities/events/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -113,6 +115,16 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  VolatilityAnalysis,
+  VolSurfaceSnapshot,
+  VolSurfaceRegimeType,
+  SkewTypeValue,
+  VolatilitySignalType,
+  EventCalendar,
+  EventImpactAnalysis,
+  MarketEvent,
+  EventCategoryType,
+  EventImpactType,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -149,4 +161,14 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  VolSurfaceRegime,
+  SkewType,
+  VolatilitySignal,
+  VolatilityAnalysisSchema,
+  VolSurfaceSnapshotSchema,
+  EventCategory,
+  EventImpact,
+  MarketEventSchema,
+  EventCalendarSchema,
+  EventImpactAnalysisSchema,
 } from "./types/index.js";

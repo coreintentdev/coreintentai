@@ -572,6 +572,228 @@ export const NarrativeReportSchema = z.object({
 export type NarrativeReport = z.infer<typeof NarrativeReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Volatility Intelligence
+// ---------------------------------------------------------------------------
+
+export const VolSurfaceRegime = z.enum([
+  "contango",
+  "backwardation",
+  "flat",
+  "inverted",
+  "kinked",
+]);
+
+export type VolSurfaceRegimeType = z.infer<typeof VolSurfaceRegime>;
+
+export const SkewType = z.enum([
+  "put_skew",
+  "call_skew",
+  "symmetric",
+  "smile",
+]);
+
+export type SkewTypeValue = z.infer<typeof SkewType>;
+
+export const VolatilitySignal = z.enum([
+  "vol_expansion",
+  "vol_crush",
+  "mean_reverting",
+  "trending_higher",
+  "trending_lower",
+  "regime_shift",
+]);
+
+export type VolatilitySignalType = z.infer<typeof VolatilitySignal>;
+
+export const VolatilityAnalysisSchema = z.object({
+  ticker: z.string(),
+  impliedVolatility: z.number().min(0),
+  historicalVolatility: z.number().min(0),
+  ivRank: z.number().min(0).max(100),
+  ivPercentile: z.number().min(0).max(100),
+  ivHvSpread: z.number(),
+  termStructure: z.object({
+    regime: VolSurfaceRegime,
+    frontMonth: z.number().min(0),
+    secondMonth: z.number().min(0),
+    thirdMonth: z.number().min(0),
+    slope: z.number(),
+    signal: z.string(),
+  }),
+  skew: z.object({
+    type: SkewType,
+    put25Delta: z.number(),
+    atm: z.number(),
+    call25Delta: z.number(),
+    skewIndex: z.number(),
+    signal: z.string(),
+  }),
+  signal: VolatilitySignal,
+  unusualActivity: z.array(
+    z.object({
+      description: z.string(),
+      significance: z.enum(["low", "medium", "high", "extreme"]),
+      interpretation: z.string(),
+    })
+  ),
+  strategies: z.array(
+    z.object({
+      name: z.string(),
+      rationale: z.string(),
+      legs: z.array(z.string()),
+      maxProfit: z.string(),
+      maxLoss: z.string(),
+      breakeven: z.string(),
+      edge: z.string(),
+    })
+  ),
+  riskMetrics: z.object({
+    vegaExposure: z.string(),
+    gammaProfile: z.string(),
+    thetaDecay: z.string(),
+    volOfVol: z.number().min(0).optional(),
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type VolatilityAnalysis = z.infer<typeof VolatilityAnalysisSchema>;
+
+export const VolSurfaceSnapshotSchema = z.object({
+  ticker: z.string(),
+  surfaceRegime: VolSurfaceRegime,
+  atmIv: z.number().min(0),
+  skewSteepness: z.number(),
+  termSlope: z.number(),
+  wingBehavior: z.string(),
+  eventPricing: z.array(
+    z.object({
+      event: z.string(),
+      impliedMove: z.number().min(0),
+      historicalAvgMove: z.number().min(0),
+      premium: z.number(),
+    })
+  ),
+  tradingOpportunities: z.array(
+    z.object({
+      opportunity: z.string(),
+      conviction: z.number().min(0).max(1),
+      structure: z.string(),
+      risk: z.string(),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type VolSurfaceSnapshot = z.infer<typeof VolSurfaceSnapshotSchema>;
+
+// ---------------------------------------------------------------------------
+// Event Intelligence
+// ---------------------------------------------------------------------------
+
+export const EventCategory = z.enum([
+  "earnings",
+  "economic_data",
+  "fed_meeting",
+  "options_expiry",
+  "dividend",
+  "conference",
+  "regulatory",
+  "geopolitical",
+  "ipo_lockup",
+  "index_rebalance",
+]);
+
+export type EventCategoryType = z.infer<typeof EventCategory>;
+
+export const EventImpact = z.enum(["low", "medium", "high", "critical"]);
+
+export type EventImpactType = z.infer<typeof EventImpact>;
+
+export const MarketEventSchema = z.object({
+  name: z.string(),
+  category: EventCategory,
+  date: z.string(),
+  time: z.string().optional(),
+  expectedImpact: EventImpact,
+  affectedTickers: z.array(z.string()),
+  historicalAvgMove: z.number().min(0),
+  impliedMove: z.number().min(0).optional(),
+  consensus: z.string().optional(),
+  surprise: z.string().optional(),
+  tradingStrategy: z.object({
+    priorToEvent: z.string(),
+    duringEvent: z.string(),
+    afterEvent: z.string(),
+  }),
+  risks: z.array(z.string()),
+});
+
+export type MarketEvent = z.infer<typeof MarketEventSchema>;
+
+export const EventCalendarSchema = z.object({
+  startDate: z.string(),
+  endDate: z.string(),
+  events: z.array(MarketEventSchema),
+  highImpactCount: z.number().int().min(0),
+  riskDensity: z.enum(["light", "moderate", "heavy", "extreme"]),
+  weeklyOutlook: z.string(),
+  keyThemes: z.array(z.string()),
+  tradingBias: z.object({
+    direction: z.enum(["bullish", "bearish", "neutral", "volatile"]),
+    confidence: z.number().min(0).max(1),
+    rationale: z.string(),
+  }),
+  positioningAdvice: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type EventCalendar = z.infer<typeof EventCalendarSchema>;
+
+export const EventImpactAnalysisSchema = z.object({
+  event: z.string(),
+  category: EventCategory,
+  actual: z.string().optional(),
+  expected: z.string().optional(),
+  surprise: z.string().optional(),
+  marketReaction: z.object({
+    immediate: z.string(),
+    shortTerm: z.string(),
+    interpretation: z.string(),
+  }),
+  sectorImpact: z.array(
+    z.object({
+      sector: z.string(),
+      impact: z.enum(["positive", "negative", "neutral", "mixed"]),
+      magnitude: z.number().min(0).max(1),
+      reasoning: z.string(),
+    })
+  ),
+  secondOrderEffects: z.array(z.string()),
+  historicalComparison: z.object({
+    similarEvents: z.number().int().min(0),
+    avgNextDayMove: z.number(),
+    avgNextWeekMove: z.number(),
+    winRate: z.number().min(0).max(1),
+    pattern: z.string(),
+  }),
+  tradingPlaybook: z.array(
+    z.object({
+      strategy: z.string(),
+      timeframe: z.string(),
+      conviction: z.number().min(0).max(1),
+      risk: z.string(),
+    })
+  ),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type EventImpactAnalysis = z.infer<typeof EventImpactAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 

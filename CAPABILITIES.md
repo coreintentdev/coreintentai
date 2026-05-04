@@ -262,6 +262,65 @@ Assesses market microstructure conditions, detects liquidity traps, and provides
 
 ---
 
+### 12. Volatility Intelligence
+**Class:** `VolatilityIntelligence`
+
+Options-derived market intelligence: implied volatility surfaces, term structure analysis, skew dynamics, and volatility regime detection. Thinks in Greeks, not just price.
+
+**Methods:**
+- `analyze()` — Full volatility analysis (IV/HV, term structure, skew, strategies)
+- `surface()` — Map the complete implied volatility surface with event pricing
+- `analyzeSkew()` — Deep-dive skew analysis revealing positioning and fear
+- `consensus()` — Multi-model vol consensus (Claude structural + Grok speed)
+- `tieredAnalysis()` — Fast Grok pre-screen, deep Claude dive on extreme IV rank
+
+**Vol Surface Regimes:** contango, backwardation, flat, inverted, kinked
+
+**Skew Types:** put_skew, call_skew, symmetric, smile
+
+**Volatility Signals:** vol_expansion, vol_crush, mean_reverting, trending_higher, trending_lower, regime_shift
+
+**Output:** Structured `VolatilityAnalysis` + `VolSurfaceSnapshot` with:
+- IV rank/percentile and IV-HV spread (the "edge" metric)
+- Term structure regime with slope and signal
+- 25-delta skew with skew index
+- Volatility signal classification
+- Unusual options activity detection
+- Strategy recommendations with full P/L profiles (legs, max profit/loss, breakeven, edge)
+- Risk metrics: vega exposure, gamma profile, theta decay, vol-of-vol
+- Event pricing with implied vs. historical move comparison
+
+---
+
+### 13. Event Intelligence
+**Class:** `EventIntelligence`
+
+Calendar-driven trading intelligence: scans for upcoming events, assesses historical impact, and generates event-driven strategies. Every trading day exists in the shadow of the event calendar.
+
+**Methods:**
+- `scan()` — Scan event calendar for a date range with filtering
+- `impactAnalysis()` — Analyze the realized impact of a specific event
+- `eventStrategy()` — Generate strategies for an upcoming event cluster
+- `consensus()` — Multi-model event consensus (Perplexity real-time + Claude analysis)
+- `fullBriefing()` — Full pipeline: scan → filter high-impact → deep-dive each
+
+**Event Categories:** earnings, economic_data, fed_meeting, options_expiry, dividend, conference, regulatory, geopolitical, ipo_lockup, index_rebalance
+
+**Risk Density Levels:** light, moderate, heavy, extreme
+
+**Output:** Structured `EventCalendar` + `EventImpactAnalysis` with:
+- Per-event impact classification (low → critical)
+- Historical average move vs. implied move comparison
+- Pre-event, during-event, and post-event trading strategies
+- Risk density scoring for the week
+- Trading bias with confidence and rationale
+- Sector-by-sector impact with magnitude scoring
+- Second-order effects (what the event implies for future events)
+- Historical comparison with win rates and avg moves
+- Trading playbook with conviction-weighted strategies
+
+---
+
 ## Resilience Layer
 
 ### Circuit Breaker
@@ -338,7 +397,7 @@ Output includes: Health Score (0-100), Alert Level, Top Threats, Narrative Shift
 - **Zod** — Runtime schema validation for all AI outputs
 - **Anthropic SDK** — Native Claude integration
 - **OpenAI SDK** — Grok and Perplexity via OpenAI-compatible APIs
-- **Vitest** — Fast testing with 314+ tests
+- **Vitest** — Fast testing with 413+ tests
 - **Zero external runtime dependencies** beyond the AI SDKs
 
 ---
