@@ -133,26 +133,30 @@ export class NarrativeIntelligence {
     const grokReport = parseJsonResponse(grokResponse.content, NarrativeReportSchema);
     const claudeReport = parseJsonResponse(claudeResponse.content, NarrativeReportSchema);
 
-    // Find narratives identified by both models (by category + similar name matching)
-    const grokNarratives = new Set(
-      grokReport.narratives
-        .filter((n) => n.strength >= 50)
-        .map((n) => n.category)
-    );
-    const claudeNarratives = new Set(
-      claudeReport.narratives
-        .filter((n) => n.strength >= 50)
-        .map((n) => n.category)
-    );
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    const highConvictionNarratives = [...grokNarratives].filter((c) =>
-      claudeNarratives.has(c)
-    );
+    const grokStrong = grokReport.narratives.filter((n) => n.strength >= 50);
+    const claudeStrong = claudeReport.narratives.filter((n) => n.strength >= 50);
 
-    const allCategories = new Set([...grokNarratives, ...claudeNarratives]);
+    const highConvictionNarratives: string[] = [];
+    for (const gn of grokStrong) {
+      const match = claudeStrong.find(
+        (cn) =>
+          cn.category === gn.category &&
+          normalize(cn.name) === normalize(gn.name)
+      );
+      if (match) {
+        highConvictionNarratives.push(gn.name);
+      }
+    }
+
+    const allUniqueNames = new Set([
+      ...grokStrong.map((n) => normalize(n.name)),
+      ...claudeStrong.map((n) => normalize(n.name)),
+    ]);
     const agreement =
-      allCategories.size > 0
-        ? highConvictionNarratives.length / allCategories.size
+      allUniqueNames.size > 0
+        ? highConvictionNarratives.length / allUniqueNames.size
         : 1;
 
     return {
