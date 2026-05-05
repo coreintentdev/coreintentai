@@ -1,10 +1,3 @@
-/**
- * CoreIntent AI — Claude (Anthropic) Adapter
- *
- * Primary reasoning engine. Used for deep analysis, signal generation,
- * risk assessment, and any task requiring strong logical reasoning.
- */
-
 import Anthropic from "@anthropic-ai/sdk";
 import type { ModelConfig } from "../types/index.js";
 import {
@@ -24,18 +17,63 @@ export class ClaudeAdapter extends BaseModelAdapter {
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
     const start = performance.now();
 
-    const response = await this.client.messages.create({
+    const systemParam =
+      request.enableCaching && request.systemPrompt
+        ? [
+            {
+              type: "text" as const,
+              text: request.systemPrompt,
+              cache_control: { type: "ephemeral" as const },
+            },
+          ]
+        : (request.systemPrompt ?? "");
+
+    const baseMaxTokens = request.maxTokens ?? this.config.maxTokens;
+
+    const params: Record<string, unknown> = {
       model: this.config.model,
-      max_tokens: request.maxTokens ?? this.config.maxTokens,
-      temperature: request.temperature ?? this.config.temperature,
-      system: request.systemPrompt ?? "",
+      system: systemParam,
       messages: [{ role: "user", content: request.prompt }],
-    });
+    };
+
+    if (request.enableThinking) {
+      const thinkingBudget = request.thinkingBudget ?? 8000;
+      params.thinking = { type: "enabled", budget_tokens: thinkingBudget };
+      params.max_tokens = baseMaxTokens + thinkingBudget;
+    } else {
+      params.max_tokens = baseMaxTokens;
+      params.temperature = request.temperature ?? this.config.temperature;
+    }
+
+    const response = await this.client.messages.create(
+      params as unknown as Anthropic.MessageCreateParamsNonStreaming
+    );
 
     const latencyMs = Math.round(performance.now() - start);
 
-    const textBlock = response.content.find((b) => b.type === "text");
-    const content = textBlock ? textBlock.text : "";
+    let content = "";
+    let thinking = "";
+    for (const block of response.content) {
+      if (block.type === "text") {
+        content += block.text;
+      } else if (block.type === "thinking") {
+        thinking += (block as unknown as { thinking: string }).thinking;
+      }
+    }
+
+    const usage = response.usage as unknown as Record<string, unknown>;
+    const hasCacheData =
+      usage.cache_read_input_tokens !== undefined ||
+      usage.cache_creation_input_tokens !== undefined;
+
+    const cacheMetrics = hasCacheData
+      ? {
+          cacheReadInputTokens:
+            (usage.cache_read_input_tokens as number) ?? 0,
+          cacheCreationInputTokens:
+            (usage.cache_creation_input_tokens as number) ?? 0,
+        }
+      : undefined;
 
     return {
       content,
@@ -49,6 +87,8 @@ export class ClaudeAdapter extends BaseModelAdapter {
       },
       latencyMs,
       finishReason: response.stop_reason ?? "unknown",
+      ...(thinking ? { thinking } : {}),
+      ...(cacheMetrics ? { cacheMetrics } : {}),
     };
   }
 
