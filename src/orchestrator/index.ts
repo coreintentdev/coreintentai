@@ -3,7 +3,7 @@ import type {
   OrchestrationResponse,
 } from "../types/index.js";
 import { getProviderChain } from "./router.js";
-import { executeWithFallback } from "./fallback.js";
+import { executeWithFallback, CoreIntentAIError } from "./fallback.js";
 import {
   CircuitBreaker,
   type CircuitBreakerOptions,
@@ -164,6 +164,15 @@ export class Orchestrator {
       }
 
       if (this.options.adaptiveRouter) {
+        // Record failures for providers that failed before the successful one
+        for (const err of result.errors) {
+          this.options.adaptiveRouter.recordOutcome(
+            request.intent,
+            err.provider,
+            { success: false, latencyMs: 0, costUsd: 0 }
+          );
+        }
+
         const costUsd = tel
           ? tel.calculateCost(
               result.response.provider,
@@ -216,15 +225,23 @@ export class Orchestrator {
       }
 
       if (this.options.adaptiveRouter) {
-        this.options.adaptiveRouter.recordOutcome(
-          request.intent,
-          chain[0],
-          {
-            success: false,
-            latencyMs: Math.round(performance.now() - start),
-            costUsd: 0,
-          }
-        );
+        // Record failures for all providers that were attempted
+        const failedProviders =
+          error instanceof CoreIntentAIError
+            ? error.providerErrors.map((e) => e.provider)
+            : [chain[0]];
+
+        for (const provider of failedProviders) {
+          this.options.adaptiveRouter.recordOutcome(
+            request.intent,
+            provider,
+            {
+              success: false,
+              latencyMs: Math.round(performance.now() - start),
+              costUsd: 0,
+            }
+          );
+        }
       }
 
       this.options.onError(err);

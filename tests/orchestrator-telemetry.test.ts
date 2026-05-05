@@ -238,6 +238,57 @@ describe("Orchestrator + AdaptiveRouter", () => {
     expect(routedProviders[0]).toBe("grok");
   });
 
+  it("records failures for all providers when all fail", async () => {
+    const ar = new AdaptiveRouter();
+    mockAdapter.complete.mockRejectedValue(new Error("fail"));
+
+    const orch = new Orchestrator({
+      adaptiveRouter: ar,
+      maxRetries: 1,
+      fallbackEnabled: true,
+    });
+
+    await expect(
+      orch.execute({ intent: "reasoning", prompt: "test" })
+    ).rejects.toThrow();
+
+    // Both claude and grok (the fallback chain for reasoning) should be penalized
+    const claudeScore = ar.getScore("reasoning", "claude");
+    const grokScore = ar.getScore("reasoning", "grok");
+    expect(claudeScore).not.toBeNull();
+    expect(grokScore).not.toBeNull();
+    expect(claudeScore!.successRate).toBe(0);
+    expect(grokScore!.successRate).toBe(0);
+  });
+
+  it("records intermediate failures on success path with fallback", async () => {
+    const ar = new AdaptiveRouter();
+    const callCount = { n: 0 };
+    mockAdapter.complete.mockImplementation(() => {
+      callCount.n++;
+      if (callCount.n === 1) {
+        return Promise.reject(new Error("Auth error"));
+      }
+      return Promise.resolve(makeMockResponse("Fallback response", "grok"));
+    });
+
+    const orch = new Orchestrator({
+      adaptiveRouter: ar,
+      maxRetries: 1,
+      fallbackEnabled: true,
+    });
+
+    await orch.execute({ intent: "reasoning", prompt: "test" });
+
+    // Claude failed, grok succeeded — both should be recorded
+    const claudeScore = ar.getScore("reasoning", "claude");
+    const grokScore = ar.getScore("reasoning", "grok");
+    expect(claudeScore).not.toBeNull();
+    expect(grokScore).not.toBeNull();
+    expect(claudeScore!.successRate).toBe(0);
+    expect(grokScore!.successRate).toBe(1);
+  });
+
   it("falls back to static routing with insufficient data", async () => {
     const ar = new AdaptiveRouter({ minSamples: 100 });
     mockAdapter.complete.mockResolvedValue(makeMockResponse("ok"));
