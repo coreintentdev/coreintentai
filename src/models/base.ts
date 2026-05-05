@@ -14,6 +14,9 @@ export interface CompletionRequest {
   temperature?: number;
   jsonMode?: boolean;
   timeoutMs?: number;
+  enableCaching?: boolean;
+  enableThinking?: boolean;
+  thinkingBudget?: number;
 }
 
 export interface CompletionResponse {
@@ -23,6 +26,11 @@ export interface CompletionResponse {
   tokenUsage: TokenUsage;
   latencyMs: number;
   finishReason: string;
+  thinking?: string;
+  cacheMetrics?: {
+    cacheCreationInputTokens: number;
+    cacheReadInputTokens: number;
+  };
 }
 
 export abstract class BaseModelAdapter {
