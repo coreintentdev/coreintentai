@@ -574,6 +574,55 @@ describe("CostTracker", () => {
     // $0.8/M input + $4/M output = $4.8
     expect(cost).toBeCloseTo(4.8, 2);
   });
+
+  it("applies cache-aware pricing for Claude", () => {
+    // 1M total input: 800K from cache read, 100K cache creation, 100K standard
+    const cost = tracker.calculateCost(
+      "claude-sonnet-4-20250514",
+      1_000_000, // total inputTokens (includes cache)
+      500_000,   // output
+      800_000,   // cacheReadTokens (90% discount)
+      100_000    // cacheCreationTokens (25% premium)
+    );
+    // Standard input: (1M - 800K - 100K) = 100K @ $3/M = $0.30
+    // Cache read: 800K @ $3/M * 0.1 = $0.24
+    // Cache creation: 100K @ $3/M * 1.25 = $0.375
+    // Output: 500K @ $15/M = $7.50
+    // Total = $0.30 + $0.24 + $0.375 + $7.50 = $8.415
+    expect(cost).toBeCloseTo(8.415, 2);
+  });
+
+  it("cache-aware cost is less than non-cached cost", () => {
+    const cachedCost = tracker.calculateCost(
+      "claude-sonnet-4-20250514",
+      1_000_000,
+      500_000,
+      900_000, // 90% served from cache
+      0
+    );
+    const nonCachedCost = tracker.calculateCost(
+      "claude-sonnet-4-20250514",
+      1_000_000,
+      500_000
+    );
+    expect(cachedCost).toBeLessThan(nonCachedCost);
+  });
+
+  it("records cache tokens in cost entries", () => {
+    const entry = tracker.record({
+      model: "claude-sonnet-4-20250514",
+      provider: "claude",
+      inputTokens: 1_000_000,
+      outputTokens: 500_000,
+      cacheReadTokens: 800_000,
+      cacheCreationTokens: 0,
+    });
+
+    expect(entry.cacheReadTokens).toBe(800_000);
+    expect(entry.costUsd).toBeLessThan(
+      tracker.calculateCost("claude-sonnet-4-20250514", 1_000_000, 500_000)
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------

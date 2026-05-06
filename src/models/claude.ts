@@ -56,10 +56,10 @@ export class ClaudeAdapter extends BaseModelAdapter {
       provider: "claude",
       model: response.model,
       tokenUsage: {
-        inputTokens: response.usage.input_tokens,
+        inputTokens: response.usage.input_tokens + cacheRead + cacheCreation,
         outputTokens: response.usage.output_tokens,
         totalTokens:
-          response.usage.input_tokens + response.usage.output_tokens,
+          response.usage.input_tokens + cacheRead + cacheCreation + response.usage.output_tokens,
         cacheReadTokens: cacheRead,
         cacheCreationTokens: cacheCreation,
       },

@@ -8,6 +8,8 @@ export interface CostEntry {
   provider: string;
   inputTokens: number;
   outputTokens: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
   costUsd: number;
   timestamp: string;
   capability?: string;
@@ -70,14 +72,23 @@ export class CostTracker {
   calculateCost(
     model: string,
     inputTokens: number,
-    outputTokens: number
+    outputTokens: number,
+    cacheReadTokens?: number,
+    cacheCreationTokens?: number
   ): number {
     const p = this.pricing[model];
     if (!p) {
       return this.estimateCost(inputTokens, outputTokens);
     }
+
+    const cacheRead = cacheReadTokens ?? 0;
+    const cacheCreation = cacheCreationTokens ?? 0;
+    const standardInput = inputTokens - cacheRead - cacheCreation;
+
     return (
-      (inputTokens / 1_000_000) * p.inputPer1MTokens +
+      (standardInput / 1_000_000) * p.inputPer1MTokens +
+      (cacheRead / 1_000_000) * p.inputPer1MTokens * 0.1 +
+      (cacheCreation / 1_000_000) * p.inputPer1MTokens * 1.25 +
       (outputTokens / 1_000_000) * p.outputPer1MTokens
     );
   }
@@ -87,12 +98,16 @@ export class CostTracker {
     provider: string;
     inputTokens: number;
     outputTokens: number;
+    cacheReadTokens?: number;
+    cacheCreationTokens?: number;
     capability?: string;
   }): CostEntry {
     const costUsd = this.calculateCost(
       params.model,
       params.inputTokens,
-      params.outputTokens
+      params.outputTokens,
+      params.cacheReadTokens,
+      params.cacheCreationTokens
     );
 
     const entry: CostEntry = {
@@ -100,6 +115,8 @@ export class CostTracker {
       provider: params.provider,
       inputTokens: params.inputTokens,
       outputTokens: params.outputTokens,
+      cacheReadTokens: params.cacheReadTokens,
+      cacheCreationTokens: params.cacheCreationTokens,
       costUsd,
       timestamp: new Date().toISOString(),
       capability: params.capability,

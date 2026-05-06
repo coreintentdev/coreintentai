@@ -66,6 +66,8 @@ export class Telemetry {
           provider: response.provider,
           inputTokens: response.tokenUsage.inputTokens,
           outputTokens: response.tokenUsage.outputTokens,
+          cacheReadTokens: response.tokenUsage.cacheReadTokens,
+          cacheCreationTokens: response.tokenUsage.cacheCreationTokens,
         });
 
         telemetry.events.emit({
