@@ -27,6 +27,7 @@ export class RegimeDetector {
       intent: "reasoning",
       systemPrompt: REGIME_SYSTEM_PROMPT,
       prompt: buildRegimeDetectionPrompt(params),
+      jsonMode: true,
     });
 
     return parseRegimeResponse(response.content);
@@ -43,6 +44,7 @@ export class RegimeDetector {
       intent: "reasoning",
       systemPrompt: REGIME_SYSTEM_PROMPT,
       prompt: buildMultiTimeframeRegimePrompt(params),
+      jsonMode: true,
     });
 
     return parseRegimeResponse(response.content);
@@ -57,6 +59,7 @@ export class RegimeDetector {
       intent: "reasoning",
       systemPrompt: REGIME_SYSTEM_PROMPT,
       prompt: buildRegimeTransitionPrompt(params),
+      jsonMode: true,
     });
 
     return parseRegimeResponse(response.content);
@@ -77,6 +80,7 @@ export class RegimeDetector {
         intent: "reasoning",
         systemPrompt: REGIME_SYSTEM_PROMPT,
         prompt: buildRegimeDetectionPrompt(params),
+      jsonMode: true,
       },
       params.providers ?? ["claude", "grok"]
     );

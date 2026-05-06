@@ -52,6 +52,7 @@ export class ConsensusEngine {
         responses: modelResponses,
       }),
       preferredProvider: "claude",
+      jsonMode: true,
     });
 
     return parseJsonResponse(synthesis.content, ConsensusResultSchema);
@@ -92,6 +93,7 @@ export class ConsensusEngine {
         marketContext: params.marketContext,
       }),
       preferredProvider: "claude",
+      jsonMode: true,
     });
 
     return parseJsonResponse(synthesis.content, ConsensusResultSchema);

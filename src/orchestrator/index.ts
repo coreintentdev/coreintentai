@@ -76,6 +76,7 @@ export class Orchestrator {
           systemPrompt: request.systemPrompt,
           prompt: request.prompt,
           timeoutMs: request.timeoutMs ?? this.options.defaultTimeoutMs,
+          jsonMode: request.jsonMode,
         },
         maxRetries: request.maxRetries ?? this.options.maxRetries,
         circuitBreaker: this.options.circuitBreaker ?? undefined,

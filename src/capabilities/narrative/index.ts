@@ -34,6 +34,7 @@ export class NarrativeIntelligence {
       intent: "research",
       systemPrompt: NARRATIVE_SYSTEM_PROMPT,
       prompt: buildNarrativeDetectionPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, NarrativeReportSchema);
@@ -54,6 +55,7 @@ export class NarrativeIntelligence {
       intent: "reasoning",
       systemPrompt: NARRATIVE_SYSTEM_PROMPT,
       prompt: buildNarrativeStrengthPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, NarrativeReportSchema);
@@ -74,6 +76,7 @@ export class NarrativeIntelligence {
       intent: "reasoning",
       systemPrompt: NARRATIVE_SYSTEM_PROMPT,
       prompt: buildNarrativeShiftPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, NarrativeReportSchema);
@@ -92,6 +95,7 @@ export class NarrativeIntelligence {
       intent: "research",
       systemPrompt: NARRATIVE_SYSTEM_PROMPT,
       prompt: buildNarrativeMapPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, NarrativeReportSchema);

@@ -43,6 +43,7 @@ export interface OrchestrationRequest {
   preferredProvider?: ModelProvider;
   maxRetries?: number;
   timeoutMs?: number;
+  jsonMode?: boolean;
 }
 
 export interface OrchestrationResponse {
@@ -59,6 +60,8 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cacheReadTokens?: number;
+  cacheCreationTokens?: number;
 }
 
 // ---------------------------------------------------------------------------

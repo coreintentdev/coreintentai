@@ -36,6 +36,7 @@ export class LiquidityAnalyzer {
       intent: "fast_analysis",
       systemPrompt: LIQUIDITY_SYSTEM_PROMPT,
       prompt: buildLiquidityAssessmentPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, LiquidityAssessmentSchema);
@@ -58,6 +59,7 @@ export class LiquidityAnalyzer {
       intent: "reasoning",
       systemPrompt: LIQUIDITY_SYSTEM_PROMPT,
       prompt: buildExecutionRiskPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, ExecutionPlanSchema);
@@ -78,6 +80,7 @@ export class LiquidityAnalyzer {
       intent: "reasoning",
       systemPrompt: LIQUIDITY_SYSTEM_PROMPT,
       prompt: buildLiquidityTrapPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, LiquidityAssessmentSchema);
@@ -98,6 +101,7 @@ export class LiquidityAnalyzer {
       intent: "reasoning",
       systemPrompt: LIQUIDITY_SYSTEM_PROMPT,
       prompt: buildMarketMicrostructurePrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, LiquidityAssessmentSchema);
@@ -130,12 +134,14 @@ export class LiquidityAnalyzer {
         systemPrompt: LIQUIDITY_SYSTEM_PROMPT,
         prompt,
         preferredProvider: "grok",
+        jsonMode: true,
       },
       {
         intent: "reasoning",
         systemPrompt: LIQUIDITY_SYSTEM_PROMPT,
         prompt,
         preferredProvider: "claude",
+        jsonMode: true,
       },
     ]);
 

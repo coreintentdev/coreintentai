@@ -28,6 +28,7 @@ export class CorrelationAnalyzer {
       intent: "reasoning",
       systemPrompt: CORRELATION_SYSTEM_PROMPT,
       prompt: buildCorrelationPrompt(params),
+      jsonMode: true,
     });
 
     return parseCorrelationResponse(response.content);
@@ -43,6 +44,7 @@ export class CorrelationAnalyzer {
       intent: "reasoning",
       systemPrompt: CORRELATION_SYSTEM_PROMPT,
       prompt: buildCorrelationBreakdownPrompt(params),
+      jsonMode: true,
     });
 
     return parseCorrelationResponse(response.content);
@@ -56,6 +58,7 @@ export class CorrelationAnalyzer {
       intent: "reasoning",
       systemPrompt: CORRELATION_SYSTEM_PROMPT,
       prompt: buildStressCorrelationPrompt(params),
+      jsonMode: true,
     });
 
     return parseCorrelationResponse(response.content);
@@ -75,6 +78,7 @@ export class CorrelationAnalyzer {
         intent: "reasoning",
         systemPrompt: CORRELATION_SYSTEM_PROMPT,
         prompt: buildCorrelationPrompt(params),
+      jsonMode: true,
       },
       params.providers ?? ["claude", "grok"]
     );

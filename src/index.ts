@@ -51,6 +51,31 @@ export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
 
 // ---------------------------------------------------------------------------
+// Telemetry & Observability
+// ---------------------------------------------------------------------------
+export { Telemetry, AIEventBus, MetricsCollector, CostTracker } from "./telemetry/index.js";
+export type {
+  TelemetryOptions,
+  AIEvent,
+  AIEventType,
+  RequestStartEvent,
+  RequestCompleteEvent,
+  RequestErrorEvent,
+  FallbackTriggeredEvent,
+  CircuitStateChangeEvent,
+  CapabilityExecuteEvent,
+  CapabilityCompleteEvent,
+  AgentStepEvent,
+  CostIncurredEvent,
+  LatencyStats,
+  ProviderStats,
+  MetricsSnapshot,
+  ModelPricing,
+  CostEntry,
+  CostSnapshot,
+} from "./telemetry/index.js";
+
+// ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
 export {
