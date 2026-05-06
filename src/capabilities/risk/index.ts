@@ -43,6 +43,7 @@ export class RiskAssessor {
       intent: "risk",
       systemPrompt: RISK_SYSTEM_PROMPT,
       prompt: buildPositionRiskPrompt(params),
+      jsonMode: true,
     });
 
     return parseRiskResponse(response.content);
@@ -66,6 +67,7 @@ export class RiskAssessor {
       intent: "risk",
       systemPrompt: RISK_SYSTEM_PROMPT,
       prompt: buildPortfolioRiskPrompt(params),
+      jsonMode: true,
     });
 
     return parseRiskResponse(response.content);
@@ -85,6 +87,7 @@ export class RiskAssessor {
       intent: "risk",
       systemPrompt: RISK_SYSTEM_PROMPT,
       prompt: buildPreTradeRiskPrompt(params),
+      jsonMode: true,
     });
 
     const assessment = parseRiskResponse(response.content);

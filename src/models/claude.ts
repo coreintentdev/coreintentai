@@ -24,11 +24,21 @@ export class ClaudeAdapter extends BaseModelAdapter {
   async complete(request: CompletionRequest): Promise<CompletionResponse> {
     const start = performance.now();
 
+    const systemContent = request.systemPrompt
+      ? [
+          {
+            type: "text" as const,
+            text: request.systemPrompt,
+            cache_control: { type: "ephemeral" as const },
+          },
+        ]
+      : undefined;
+
     const response = await this.client.messages.create({
       model: this.config.model,
       max_tokens: request.maxTokens ?? this.config.maxTokens,
       temperature: request.temperature ?? this.config.temperature,
-      system: request.systemPrompt ?? "",
+      ...(systemContent ? { system: systemContent } : {}),
       messages: [{ role: "user", content: request.prompt }],
     });
 
@@ -37,15 +47,21 @@ export class ClaudeAdapter extends BaseModelAdapter {
     const textBlock = response.content.find((b) => b.type === "text");
     const content = textBlock ? textBlock.text : "";
 
+    const usage = response.usage as unknown as Record<string, number>;
+    const cacheRead = usage.cache_read_input_tokens ?? 0;
+    const cacheCreation = usage.cache_creation_input_tokens ?? 0;
+
     return {
       content,
       provider: "claude",
       model: response.model,
       tokenUsage: {
-        inputTokens: response.usage.input_tokens,
+        inputTokens: response.usage.input_tokens + cacheRead + cacheCreation,
         outputTokens: response.usage.output_tokens,
         totalTokens:
-          response.usage.input_tokens + response.usage.output_tokens,
+          response.usage.input_tokens + cacheRead + cacheCreation + response.usage.output_tokens,
+        cacheReadTokens: cacheRead,
+        cacheCreationTokens: cacheCreation,
       },
       latencyMs,
       finishReason: response.stop_reason ?? "unknown",

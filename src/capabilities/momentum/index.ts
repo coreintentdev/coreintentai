@@ -32,6 +32,7 @@ export class MomentumScorer {
       intent: "fast_analysis",
       systemPrompt: MOMENTUM_SYSTEM_PROMPT,
       prompt: buildMomentumRankingPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, MomentumReportSchema);
@@ -53,6 +54,7 @@ export class MomentumScorer {
       intent: "research",
       systemPrompt: MOMENTUM_SYSTEM_PROMPT,
       prompt: buildMomentumScreenerPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, MomentumReportSchema);
@@ -70,6 +72,7 @@ export class MomentumScorer {
       intent: "reasoning",
       systemPrompt: MOMENTUM_SYSTEM_PROMPT,
       prompt: buildMomentumShiftPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, MomentumReportSchema);

@@ -37,6 +37,7 @@ export class SignalGenerator {
       intent: "signal",
       systemPrompt: SIGNAL_SYSTEM_PROMPT,
       prompt: buildSignalPrompt(params),
+      jsonMode: true,
     });
 
     return parseSignalResponse(response.content);
@@ -54,6 +55,7 @@ export class SignalGenerator {
       intent: "signal",
       systemPrompt: SIGNAL_SYSTEM_PROMPT,
       prompt: buildMultiSignalPrompt(params),
+      jsonMode: true,
     });
 
     return parseMultiSignalResponse(response.content);
@@ -83,6 +85,7 @@ export class SignalGenerator {
         additionalContext: params.marketContext,
       }),
       preferredProvider: "grok",
+      jsonMode: true,
     });
 
     try {
@@ -123,6 +126,7 @@ export class SignalGenerator {
         intent: "signal",
         systemPrompt: SIGNAL_SYSTEM_PROMPT,
         prompt: buildSignalPrompt(params),
+        jsonMode: true,
       },
       params.providers ?? ["claude", "grok"]
     );

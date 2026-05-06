@@ -31,6 +31,7 @@ export class AnomalyDetector {
       intent: "reasoning",
       systemPrompt: ANOMALY_SYSTEM_PROMPT,
       prompt: buildAnomalyDetectionPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, AnomalyReportSchema);
@@ -45,6 +46,7 @@ export class AnomalyDetector {
       intent: "reasoning",
       systemPrompt: ANOMALY_SYSTEM_PROMPT,
       prompt: buildMultiAssetAnomalyScanPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonArrayResponse(response.content, AnomalyReportSchema);
@@ -60,6 +62,7 @@ export class AnomalyDetector {
       intent: "reasoning",
       systemPrompt: ANOMALY_SYSTEM_PROMPT,
       prompt: buildAnomalyContextPrompt(params),
+      jsonMode: true,
     });
 
     return parseJsonResponse(response.content, AnomalyReportSchema);
@@ -85,6 +88,7 @@ export class AnomalyDetector {
         priceData: params.priceData,
         volumeData: params.volumeData,
       }),
+      jsonMode: true,
     });
 
     const report = parseJsonResponse(quickScan.content, AnomalyReportSchema);

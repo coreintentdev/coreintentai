@@ -35,6 +35,7 @@ export class SentimentAnalyzer {
       intent: "sentiment",
       systemPrompt: SENTIMENT_SYSTEM_PROMPT,
       prompt: buildSentimentPrompt(params),
+      jsonMode: true,
     });
 
     return parseSentimentResponse(response.content);
@@ -51,6 +52,7 @@ export class SentimentAnalyzer {
       intent: "sentiment",
       systemPrompt: SENTIMENT_SYSTEM_PROMPT,
       prompt: buildNewsSentimentPrompt(params),
+      jsonMode: true,
     });
 
     return parseSentimentResponse(response.content);
@@ -71,6 +73,7 @@ export class SentimentAnalyzer {
       intent: "sentiment",
       systemPrompt: SENTIMENT_SYSTEM_PROMPT,
       prompt: buildEarningsSentimentPrompt(params),
+      jsonMode: true,
     });
 
     return parseSentimentResponse(response.content);
@@ -95,6 +98,7 @@ export class SentimentAnalyzer {
         intent: "sentiment",
         systemPrompt: SENTIMENT_SYSTEM_PROMPT,
         prompt: buildSentimentPrompt(params),
+        jsonMode: true,
       },
       params.providers ?? ["claude", "grok", "perplexity"]
     );
