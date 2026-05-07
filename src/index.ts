@@ -22,6 +22,20 @@ export type {
   CircuitState,
   CircuitBreakerOptions,
 } from "./orchestrator/circuit-breaker.js";
+export { AdaptiveRouter } from "./orchestrator/adaptive-router.js";
+export type {
+  ProviderScore,
+  AdaptiveRouterOptions,
+} from "./orchestrator/adaptive-router.js";
+export { ResponseCache } from "./orchestrator/response-cache.js";
+export type { ResponseCacheOptions } from "./orchestrator/response-cache.js";
+export { Telemetry } from "./orchestrator/telemetry.js";
+export type {
+  TelemetryEvent,
+  TelemetryEventType,
+  TelemetryListener,
+  TelemetrySnapshot,
+} from "./orchestrator/telemetry.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters

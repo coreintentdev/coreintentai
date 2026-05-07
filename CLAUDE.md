@@ -46,7 +46,7 @@ src/
 │   ├── momentum/   # Momentum scoring and ranking
 │   ├── narrative/  # Narrative intelligence (story-driven markets)
 │   └── liquidity/  # Liquidity assessment and execution intelligence
-├── agents/         # Autonomous trading intelligence agents (incl. StrategyAdvisor)
+├── agents/         # Autonomous trading intelligence agents (incl. StrategyAdvisor, PortfolioWatchdog)
 ├── types/          # Shared TypeScript types + Zod schemas
 ├── utils/          # Shared utilities (robust JSON parser)
 └── index.ts        # Public API exports
@@ -54,17 +54,26 @@ src/
 
 ## Key Patterns
 
-### Intent-Based Routing
-Every request has an `intent` (reasoning, fast_analysis, research, sentiment, signal, risk). The router maps each intent to the optimal model provider with fallback chains.
+### Intent-Based Routing + Adaptive Learning
+Every request has an `intent` (reasoning, fast_analysis, research, sentiment, signal, risk). The static router maps each intent to the optimal model provider with fallback chains. The **Adaptive Router** layer sits on top, learning which provider performs best for each intent based on actual quality scores, latency, and success rates — using epsilon-greedy exploration and exponential decay to adapt over time.
+
+### Confidence-Gated Escalation
+When a fast model (Grok) returns a low-confidence response, the Adaptive Router can escalate to a deeper model (Claude) automatically. This gives you the speed of Grok for easy queries and the depth of Claude when the situation demands it.
 
 ### Fallback Chains + Circuit Breaker
 If a provider fails (timeout, rate limit, error), the system automatically falls through to the next provider. Transient errors trigger retries with exponential backoff (with jitter). A circuit breaker tracks provider health — after repeated failures, the circuit opens and the provider is deprioritized until it recovers. Providers are ranked by health state and latency for adaptive routing.
+
+### Response Cache
+TTL-based response caching with intent-specific expiration (sentiment: 30s, research: 5min, risk: 2min). Avoids redundant API calls during consensus operations and repeated analyses. SHA-256 keyed by intent + prompt + system prompt.
+
+### Telemetry & Observability
+Full event-based telemetry system tracks every request lifecycle: start, complete, error, fallback, cache hit, escalation. Provides real-time snapshots with per-provider and per-intent breakdowns (requests, errors, latency, token usage). Listener-based architecture for plugging into external monitoring.
 
 ### Structured Output
 All capability outputs are validated with Zod schemas. The AI layer produces typed, parseable data — not free-form text. A robust JSON parser in `utils/json-parser.ts` handles multiple extraction patterns (raw JSON, markdown fences, embedded JSON) with clear error messages.
 
 ### Agent Pipeline
-Agents (MarketAnalyst → RiskManager → StrategyAdvisor → TradeExecutor) chain together for full trading workflows. The StrategyAdvisor is a meta-agent that synthesizes intelligence from all capabilities into actionable portfolio strategy with scenario analysis.
+Agents (MarketAnalyst → RiskManager → StrategyAdvisor → TradeExecutor) chain together for full trading workflows. The StrategyAdvisor is a meta-agent that synthesizes intelligence from all capabilities into actionable portfolio strategy with scenario analysis. The PortfolioWatchdog provides real-time multi-dimensional surveillance across all intelligence streams.
 
 ## Commands
 
