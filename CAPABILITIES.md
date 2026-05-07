@@ -18,6 +18,9 @@ The brain of the AI layer. Routes every request to the optimal model based on ta
 
 **Features:**
 - Intent-based routing with configurable provider preferences
+- **Adaptive Router** — learns optimal provider per intent from actual performance (quality, latency, cost), with epsilon-greedy exploration and confidence-gated escalation
+- **Response Cache** — SHA-256 keyed TTL cache with intent-specific expiration, LRU eviction, and hit-rate tracking
+- **Telemetry** — event-based observability tracking request lifecycle, per-provider/intent breakdowns, and real-time snapshots
 - Automatic fallback with exponential backoff retry
 - Request fan-out for parallel multi-model queries
 - Consensus mode for multi-model agreement scoring
@@ -262,7 +265,40 @@ Assesses market microstructure conditions, detects liquidity traps, and provides
 
 ---
 
-## Resilience Layer
+## Resilience & Intelligence Layer
+
+### Adaptive Router
+Self-improving provider selection that learns from every request.
+
+**Features:**
+- Composite scoring: quality (50%) × latency (30%) × cost (20%) × success rate
+- Epsilon-greedy exploration (10% random to discover improvements)
+- Exponential decay for recency-weighted quality tracking
+- Confidence-gated escalation: fast model → deep model when confidence is low
+- Per-intent, per-provider performance insights
+- Circuit breaker integration for health-aware ranking
+
+### Response Cache
+TTL-based caching that eliminates redundant API calls.
+
+**Features:**
+- SHA-256 keyed by intent + prompt + system prompt
+- Intent-specific TTLs: fast_analysis (15s), sentiment (30s), signal (30s), general (60s), risk (2min), research (5min)
+- LRU eviction with configurable max entries
+- Automatic expired-entry cleanup
+- Hit rate and size tracking
+
+### Telemetry
+Full-lifecycle observability for every orchestrator request.
+
+**Events:** request_start, request_complete, request_error, fallback_triggered, circuit_open, circuit_close, cache_hit, cache_miss, escalation, provider_degraded, provider_recovered
+
+**Features:**
+- Per-provider breakdown (requests, errors, avg latency, total tokens)
+- Per-intent breakdown (requests, avg latency)
+- Listener-based architecture for external monitoring integration
+- Configurable event history with max event limit
+- Snapshot API for dashboard consumption
 
 ### Circuit Breaker
 Tracks provider health and automatically deprioritizes failing providers.
@@ -338,7 +374,7 @@ Output includes: Health Score (0-100), Alert Level, Top Threats, Narrative Shift
 - **Zod** — Runtime schema validation for all AI outputs
 - **Anthropic SDK** — Native Claude integration
 - **OpenAI SDK** — Grok and Perplexity via OpenAI-compatible APIs
-- **Vitest** — Fast testing with 314+ tests
+- **Vitest** — Fast testing with 365+ tests
 - **Zero external runtime dependencies** beyond the AI SDKs
 
 ---
