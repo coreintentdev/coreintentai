@@ -49,7 +49,6 @@ export class PerformanceTracker {
         intent: signal.intent as TaskIntent,
         provider: signal.provider as ModelProvider,
         success: outcome !== "loss",
-        latencyMs: 0,
         qualityScore,
       });
     }
@@ -87,9 +86,11 @@ export class PerformanceTracker {
     const grossLosses = lossPnls.reduce((a, b) => a + b, 0);
     const profitFactor = grossLosses > 0 ? grossWins / grossLosses : grossWins > 0 ? Infinity : 0;
 
+    const lossRate =
+      resolved.length > 0 ? losses.length / resolved.length : 0;
     const expectancy =
       resolved.length > 0
-        ? (winRate * avgWinPct - (1 - winRate) * avgLossPct)
+        ? (winRate * avgWinPct - lossRate * avgLossPct)
         : 0;
 
     const allPnls = resolved

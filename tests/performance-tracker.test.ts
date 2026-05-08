@@ -145,6 +145,21 @@ describe("PerformanceTracker", () => {
       expect(snap.resolvedSignals).toBe(3);
     });
 
+    it("computes expectancy correctly with breakeven trades", () => {
+      tracker.recordSignal(makeSignal({ id: "ex-w", entryPrice: 100 }));
+      tracker.recordSignal(makeSignal({ id: "ex-l", entryPrice: 100 }));
+      tracker.recordSignal(makeSignal({ id: "ex-b", entryPrice: 100 }));
+
+      tracker.resolveSignal("ex-w", 110, "win");
+      tracker.resolveSignal("ex-l", 95, "loss");
+      tracker.resolveSignal("ex-b", 100, "breakeven");
+
+      const snap = tracker.getSnapshot();
+      // winRate = 1/3, lossRate = 1/3, avgWin = 10%, avgLoss = 5%
+      // expectancy = (1/3)*10 - (1/3)*5 = 1.667
+      expect(snap.expectancy).toBeCloseTo(1.667, 1);
+    });
+
     it("computes profit factor correctly", () => {
       tracker.recordSignal(makeSignal({ id: "pf-w", entryPrice: 100 }));
       tracker.recordSignal(makeSignal({ id: "pf-l", entryPrice: 100 }));
@@ -285,6 +300,27 @@ describe("PerformanceTracker", () => {
       const score = router.scoreProvider("signal", "grok");
       expect(score.sampleCount).toBe(1);
       expect(score.qualityScore).toBeLessThan(0.5);
+    });
+
+    it("does not pollute adaptive router latency tracking", () => {
+      const router = new AdaptiveRouter();
+      // Seed the router with a real latency observation
+      router.recordOutcome({
+        intent: "signal",
+        provider: "claude",
+        success: true,
+        latencyMs: 2000,
+      });
+
+      const trackerWithRouter = new PerformanceTracker(router);
+      trackerWithRouter.recordSignal(
+        makeSignal({ id: "lat1", provider: "claude", intent: "signal", entryPrice: 100 })
+      );
+      trackerWithRouter.resolveSignal("lat1", 110, "win");
+
+      const score = router.scoreProvider("signal", "claude");
+      // Latency should remain near 2000ms, not be pulled toward 0
+      expect(score.avgLatencyMs).toBeGreaterThan(1000);
     });
   });
 
