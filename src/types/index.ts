@@ -572,6 +572,176 @@ export const NarrativeReportSchema = z.object({
 export type NarrativeReport = z.infer<typeof NarrativeReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Intelligence Fusion
+// ---------------------------------------------------------------------------
+
+export const ConvictionLevel = z.enum([
+  "high_conviction_long",
+  "moderate_conviction_long",
+  "low_conviction_long",
+  "neutral",
+  "low_conviction_short",
+  "moderate_conviction_short",
+  "high_conviction_short",
+]);
+
+export type ConvictionLevelType = z.infer<typeof ConvictionLevel>;
+
+export const IntelligenceConflictSchema = z.object({
+  capabilityA: z.string(),
+  capabilityB: z.string(),
+  conflict: z.string(),
+  severity: z.enum(["minor", "moderate", "critical"]),
+  resolution: z.string(),
+  impact: z.string(),
+});
+
+export type IntelligenceConflict = z.infer<typeof IntelligenceConflictSchema>;
+
+export const CapabilitySummarySchema = z.object({
+  sentiment: z.object({
+    score: z.number().min(-1).max(1),
+    signal: z.string(),
+    confidence: z.number().min(0).max(1),
+  }),
+  regime: z.object({
+    type: z.string(),
+    volatilityRegime: z.string(),
+    confidence: z.number().min(0).max(1),
+  }),
+  momentum: z.object({
+    score: z.number().min(0).max(100),
+    acceleration: z.string(),
+    exhaustionRisk: z.number().min(0).max(1),
+  }),
+  signal: z.object({
+    action: z.string(),
+    confidence: z.number().min(0).max(1),
+    riskReward: z.number().optional(),
+  }),
+  risk: z.object({
+    level: z.string(),
+    score: z.number().min(0).max(100),
+    criticalWarnings: z.array(z.string()),
+  }),
+  anomaly: z.object({
+    alertLevel: z.string(),
+    score: z.number().min(0).max(100),
+    activeAnomalies: z.array(z.string()),
+  }),
+});
+
+export type CapabilitySummary = z.infer<typeof CapabilitySummarySchema>;
+
+export const AssetIntelligenceSchema = z.object({
+  ticker: z.string(),
+  convictionScore: z.number().min(-100).max(100),
+  convictionLevel: ConvictionLevel,
+  opportunityScore: z.number().min(0).max(100),
+  riskAdjustedScore: z.number().min(-100).max(100),
+  capabilitySummary: CapabilitySummarySchema,
+  conflicts: z.array(IntelligenceConflictSchema),
+  synthesis: z.string(),
+  actionableRecommendation: z.string(),
+  keyRisks: z.array(z.string()),
+  catalysts: z.array(z.string()),
+  invalidationPoints: z.array(z.string()),
+  confidence: z.number().min(0).max(1),
+  timestamp: z.string().datetime(),
+});
+
+export type AssetIntelligence = z.infer<typeof AssetIntelligenceSchema>;
+
+export const TradeGateDecision = z.enum(["approved", "caution", "blocked"]);
+
+export type TradeGateDecisionType = z.infer<typeof TradeGateDecision>;
+
+export const PreTradeIntelligenceSchema = z.object({
+  ticker: z.string(),
+  action: z.enum(["buy", "sell"]),
+  decision: TradeGateDecision,
+  readinessScore: z.number().min(0).max(100),
+  signalAlignment: z.object({
+    signalAction: z.string(),
+    signalConfidence: z.number().min(0).max(1),
+    matchesIntent: z.boolean(),
+  }),
+  riskProfile: z.object({
+    overallRisk: z.string(),
+    riskScore: z.number().min(0).max(100),
+    positionSizePct: z.number().min(0).max(100).optional(),
+    warnings: z.array(z.string()),
+  }),
+  liquidityProfile: z.object({
+    regime: z.string(),
+    expectedSlippageBps: z.number().min(0),
+    executionWindow: z.string(),
+  }),
+  anomalyCheck: z.object({
+    alertLevel: z.string(),
+    blockers: z.array(z.string()),
+  }),
+  blockingFactors: z.array(z.string()),
+  proceedConditions: z.array(z.string()),
+  executionGuidance: z.object({
+    algorithm: z.string(),
+    timing: z.string(),
+    urgency: z.string(),
+    notes: z.string(),
+  }),
+  synthesis: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type PreTradeIntelligence = z.infer<typeof PreTradeIntelligenceSchema>;
+
+export const MarketPhase = z.enum([
+  "risk_on",
+  "cautious",
+  "risk_off",
+  "crisis",
+  "transitioning",
+]);
+
+export type MarketPhaseType = z.infer<typeof MarketPhase>;
+
+export const MarketStateSchema = z.object({
+  tickers: z.array(z.string()),
+  systemicRiskScore: z.number().min(0).max(100),
+  marketPhase: MarketPhase,
+  regimeMap: z.array(
+    z.object({
+      ticker: z.string(),
+      regime: z.string(),
+      confidence: z.number().min(0).max(1),
+    })
+  ),
+  correlationInsights: z.object({
+    diversificationScore: z.number().min(0).max(1),
+    dominantCluster: z.string(),
+    hiddenRisks: z.array(z.string()),
+  }),
+  narrativeLandscape: z.object({
+    dominantNarrative: z.string(),
+    narrativeCount: z.number().int().min(0),
+    shiftSignals: z.array(z.string()),
+  }),
+  anomalyHeatMap: z.array(
+    z.object({
+      ticker: z.string(),
+      alertLevel: z.string(),
+      topAnomaly: z.string().optional(),
+    })
+  ),
+  synthesis: z.string(),
+  actionableInsights: z.array(z.string()),
+  watchList: z.array(z.string()),
+  timestamp: z.string().datetime(),
+});
+
+export type MarketState = z.infer<typeof MarketStateSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
