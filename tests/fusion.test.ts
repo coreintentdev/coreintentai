@@ -720,6 +720,16 @@ describe("Fusion System Prompts", () => {
     expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("CONVICTION SCORING");
   });
 
+  it("conviction scoring guide covers all 7 conviction levels", () => {
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("High conviction long");
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("Moderate conviction long");
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("Low conviction long");
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("Neutral");
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("Low conviction short");
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("Moderate conviction short");
+    expect(ASSET_INTELLIGENCE_SYSTEM_PROMPT).toContain("High conviction short");
+  });
+
   it("pre-trade prompt contains decision framework", () => {
     expect(PRE_TRADE_GATE_SYSTEM_PROMPT).toContain("APPROVED");
     expect(PRE_TRADE_GATE_SYSTEM_PROMPT).toContain("CAUTION");
@@ -954,6 +964,13 @@ describe("IntelligenceFusion", () => {
       expect(result.capabilities).toHaveProperty("narrative");
       expect(result.capabilities).toHaveProperty("regime:AAPL");
       expect(result.capabilities).toHaveProperty("anomaly:AAPL");
+    });
+
+    it("throws on empty tickers array", async () => {
+      const fusion = new IntelligenceFusion();
+      await expect(
+        fusion.marketState({ tickers: [] })
+      ).rejects.toThrow("marketState requires at least one ticker");
     });
 
     it("includes per-ticker regime and anomaly results", async () => {

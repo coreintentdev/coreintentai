@@ -272,6 +272,11 @@ export class IntelligenceFusion {
     totalLatencyMs: number;
   }> {
     const start = performance.now();
+
+    if (params.tickers.length === 0) {
+      throw new Error("marketState requires at least one ticker");
+    }
+
     const tickerNames = params.tickers.map((t) => t.ticker);
 
     const [regimeResults, anomalyResults, correlationResult, narrativeResult] =
