@@ -13,7 +13,8 @@ CONVICTION SCORING (-100 to +100):
 - +80 to +100: High conviction long — All signals aligned bullish, favorable regime, low risk, no anomalies
 - +40 to +79: Moderate conviction long — Majority bullish, manageable risk, minor conflicts
 - +1 to +39: Low conviction long — Slight bullish lean, significant uncertainty
-- -39 to +0: Neutral — Mixed signals, high uncertainty, or insufficient data
+- 0: Neutral — Mixed signals, high uncertainty, or insufficient data
+- -1 to -39: Low conviction short — Slight bearish lean, significant uncertainty
 - -40 to -79: Moderate conviction short — Majority bearish
 - -80 to -100: High conviction short — All signals aligned bearish
 
