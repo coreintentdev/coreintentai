@@ -63,6 +63,7 @@ export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
 export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
+export { VolatilityAnalyzer } from "./capabilities/volatility/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -72,6 +73,15 @@ export {
   parseJsonArrayResponse,
   ParseError,
 } from "./utils/json-parser.js";
+
+// ---------------------------------------------------------------------------
+// Rate Limiter
+// ---------------------------------------------------------------------------
+export { RateLimiter } from "./orchestrator/rate-limiter.js";
+export type {
+  RateLimiterOptions,
+  ProviderLimits,
+} from "./orchestrator/rate-limiter.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -85,6 +95,7 @@ export {
   TradeExecutorAgent,
   StrategyAdvisorAgent,
   PortfolioWatchdogAgent,
+  MultiAssetScreenerAgent,
 } from "./agents/index.js";
 
 // ---------------------------------------------------------------------------
@@ -127,6 +138,13 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  VolatilityAssessment,
+  VolSurfaceRegimeType,
+  SkewProfileType,
+  VolRegimeType,
+  ScreenerResult,
+  ScreenerReport,
+  ScreenerSignalStrengthType,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -163,4 +181,11 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  VolSurfaceRegime,
+  SkewProfile,
+  VolRegime,
+  VolatilityAssessmentSchema,
+  ScreenerSignalStrength,
+  ScreenerResultSchema,
+  ScreenerReportSchema,
 } from "./types/index.js";
