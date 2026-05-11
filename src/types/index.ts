@@ -572,6 +572,169 @@ export const NarrativeReportSchema = z.object({
 export type NarrativeReport = z.infer<typeof NarrativeReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Volatility Intelligence
+// ---------------------------------------------------------------------------
+
+export const VolSurfaceRegime = z.enum([
+  "contango",
+  "backwardation",
+  "flat",
+  "inverted",
+  "kinked",
+]);
+
+export type VolSurfaceRegimeType = z.infer<typeof VolSurfaceRegime>;
+
+export const SkewProfile = z.enum([
+  "normal",
+  "steep",
+  "flat",
+  "reverse",
+  "smile",
+]);
+
+export type SkewProfileType = z.infer<typeof SkewProfile>;
+
+export const VolRegime = z.enum([
+  "suppressed",
+  "low",
+  "normal",
+  "elevated",
+  "explosive",
+  "mean_reverting",
+]);
+
+export type VolRegimeType = z.infer<typeof VolRegime>;
+
+export const VolatilityAssessmentSchema = z.object({
+  ticker: z.string(),
+  impliedVol: z.number().min(0),
+  realizedVol: z.number().min(0),
+  ivRank: z.number().min(0).max(100),
+  ivPercentile: z.number().min(0).max(100),
+  volSpread: z.number(),
+  volSpreadZScore: z.number(),
+  regime: VolRegime,
+  surfaceRegime: VolSurfaceRegime,
+  skewProfile: SkewProfile,
+  termStructure: z.array(
+    z.object({
+      expiry: z.string(),
+      iv: z.number().min(0),
+      daysToExpiry: z.number().int().min(0),
+      rollDown: z.number(),
+    })
+  ),
+  skewMetrics: z.object({
+    put25Delta: z.number().min(0),
+    call25Delta: z.number().min(0),
+    skewIndex: z.number(),
+    riskReversal: z.number(),
+    butterflySpread: z.number(),
+  }),
+  volOfVol: z.number().min(0),
+  realizedVolCone: z.object({
+    current: z.number().min(0),
+    percentile20d: z.number().min(0).max(100),
+    percentile60d: z.number().min(0).max(100),
+    percentile120d: z.number().min(0).max(100),
+    min1y: z.number().min(0),
+    max1y: z.number().min(0),
+  }),
+  catalysts: z.array(
+    z.object({
+      event: z.string(),
+      date: z.string(),
+      expectedVolImpact: z.enum(["high", "medium", "low"]),
+      impliedMove: z.string(),
+    })
+  ),
+  strategies: z.array(
+    z.object({
+      name: z.string(),
+      rationale: z.string(),
+      structure: z.string(),
+      maxLoss: z.string(),
+      targetReturn: z.string(),
+      edge: z.string(),
+    })
+  ),
+  warnings: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type VolatilityAssessment = z.infer<typeof VolatilityAssessmentSchema>;
+
+// ---------------------------------------------------------------------------
+// Multi-Asset Screening
+// ---------------------------------------------------------------------------
+
+export const ScreenerSignalStrength = z.enum([
+  "strong",
+  "moderate",
+  "weak",
+  "neutral",
+  "conflicting",
+]);
+
+export type ScreenerSignalStrengthType = z.infer<typeof ScreenerSignalStrength>;
+
+export const ScreenerResultSchema = z.object({
+  ticker: z.string(),
+  compositeScore: z.number().min(0).max(100),
+  rank: z.number().int().positive(),
+  signals: z.object({
+    sentiment: z.object({
+      score: z.number().min(-1).max(1),
+      strength: ScreenerSignalStrength,
+    }),
+    momentum: z.object({
+      score: z.number().min(0).max(100),
+      strength: ScreenerSignalStrength,
+    }),
+    risk: z.object({
+      score: z.number().min(0).max(100),
+      strength: ScreenerSignalStrength,
+    }),
+    anomaly: z.object({
+      score: z.number().min(0).max(100),
+      strength: ScreenerSignalStrength,
+    }),
+    regime: z.object({
+      classification: z.string(),
+      strength: ScreenerSignalStrength,
+    }),
+  }),
+  conviction: z.number().min(0).max(1),
+  catalysts: z.array(z.string()),
+  risks: z.array(z.string()),
+  actionSummary: z.string(),
+});
+
+export type ScreenerResult = z.infer<typeof ScreenerResultSchema>;
+
+export const ScreenerReportSchema = z.object({
+  universe: z.array(z.string()),
+  rankings: z.array(ScreenerResultSchema),
+  topPicks: z.array(z.string()),
+  avoidList: z.array(z.string()),
+  marketRegimeSummary: z.string(),
+  sectorThemes: z.array(
+    z.object({
+      sector: z.string(),
+      theme: z.string(),
+      direction: z.enum(["bullish", "bearish", "neutral"]),
+    })
+  ),
+  diversificationNotes: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type ScreenerReport = z.infer<typeof ScreenerReportSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 
