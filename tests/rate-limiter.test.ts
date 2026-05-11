@@ -202,6 +202,26 @@ describe("RateLimiter", () => {
       const snap = limiter.getSnapshot();
       expect(snap.get("claude")!.utilizationPct).toBe(100);
     });
+
+    it("calculates correct utilization when throttled exceeds successful", () => {
+      const rl = new RateLimiter({ burstMultiplier: 1.0 }, {
+        claude: { requestsPerMinute: 1, tokensPerMinute: 100_000 },
+      });
+
+      // 1 success, then 5 throttled attempts
+      rl.acquire("claude");
+      rl.acquire("claude");
+      rl.acquire("claude");
+      rl.acquire("claude");
+      rl.acquire("claude");
+      rl.acquire("claude");
+
+      const snap = rl.getSnapshot();
+      // 1 success / 6 total attempts = ~17%
+      expect(snap.get("claude")!.totalRequests).toBe(1);
+      expect(snap.get("claude")!.throttledRequests).toBe(5);
+      expect(snap.get("claude")!.utilizationPct).toBe(17);
+    });
   });
 
   describe("reset", () => {

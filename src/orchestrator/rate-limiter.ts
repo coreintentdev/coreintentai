@@ -1,8 +1,6 @@
 import type { ModelProvider } from "../types/index.js";
 
 export interface RateLimiterOptions {
-  maxRequestsPerMinute: number;
-  maxTokensPerMinute: number;
   burstMultiplier: number;
 }
 
@@ -34,8 +32,6 @@ const DEFAULT_LIMITS: Record<ModelProvider, ProviderLimits> = {
 };
 
 const DEFAULTS: RateLimiterOptions = {
-  maxRequestsPerMinute: 60,
-  maxTokensPerMinute: 150_000,
   burstMultiplier: 1.5,
 };
 
@@ -201,9 +197,10 @@ export class RateLimiter {
       this.refillBucket(s.requestBucket);
       this.refillBucket(s.tokenBucket);
 
+      const totalAttempts = s.totalRequests + s.throttledRequests;
       const utilizationPct =
-        s.totalRequests > 0
-          ? ((s.totalRequests - s.throttledRequests) / s.totalRequests) * 100
+        totalAttempts > 0
+          ? (s.totalRequests / totalAttempts) * 100
           : 100;
 
       snap.set(provider, {
