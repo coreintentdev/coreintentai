@@ -14,6 +14,7 @@ export interface OrchestratorOptions {
   maxRetries?: number;
   defaultTimeoutMs?: number;
   fallbackEnabled?: boolean;
+  maxConcurrency?: number;
   circuitBreaker?: Partial<CircuitBreakerOptions> | false;
   adaptiveRouting?: Partial<AdaptiveRouterOptions> | false;
   cache?: Partial<ResponseCacheOptions> | false;
@@ -27,6 +28,9 @@ export class Orchestrator {
   private maxRetries: number;
   private defaultTimeoutMs: number;
   private fallbackEnabled: boolean;
+  private maxConcurrency: number;
+  private activeConcurrency = 0;
+  private concurrencyQueue: Array<() => void> = [];
   private circuitBreaker: CircuitBreaker | null;
   private adaptiveRouter: AdaptiveRouter | null;
   private responseCache: ResponseCache | null;
@@ -39,6 +43,7 @@ export class Orchestrator {
     this.maxRetries = options.maxRetries ?? 2;
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 30_000;
     this.fallbackEnabled = options.fallbackEnabled ?? true;
+    this.maxConcurrency = options.maxConcurrency ?? 10;
     this.circuitBreaker = options.circuitBreaker === false
       ? null
       : new CircuitBreaker(typeof options.circuitBreaker === "object" ? options.circuitBreaker : undefined);
@@ -70,10 +75,29 @@ export class Orchestrator {
     return this.telemetry;
   }
 
+  private async acquireConcurrency(): Promise<void> {
+    if (this.activeConcurrency < this.maxConcurrency) {
+      this.activeConcurrency++;
+      return;
+    }
+    return new Promise<void>((resolve) => {
+      this.concurrencyQueue.push(() => {
+        this.activeConcurrency++;
+        resolve();
+      });
+    });
+  }
+
+  private releaseConcurrency(): void {
+    this.activeConcurrency--;
+    const next = this.concurrencyQueue.shift();
+    if (next) next();
+  }
+
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
-    // Check cache first
+    // Check cache first (before acquiring concurrency slot)
     if (this.responseCache) {
       const cached = this.responseCache.get(
         request.intent,
@@ -100,12 +124,23 @@ export class Orchestrator {
       this.telemetry?.emit({ type: "cache_miss", intent: request.intent });
     }
 
+    await this.acquireConcurrency();
+
+    try {
+      return await this.executeInner(request);
+    } finally {
+      this.releaseConcurrency();
+    }
+  }
+
+  private async executeInner(
+    request: OrchestrationRequest
+  ): Promise<OrchestrationResponse> {
     let providers: ModelProvider[] = getProviderChain(
       request.intent,
       request.preferredProvider
     );
 
-    // Use adaptive routing if available (rerank by learned performance)
     if (this.adaptiveRouter && !request.preferredProvider) {
       providers = this.adaptiveRouter.rankProviders(
         request.intent,
@@ -164,7 +199,6 @@ export class Orchestrator {
         },
       };
 
-      // Record outcome for adaptive routing
       this.adaptiveRouter?.recordOutcome({
         intent: request.intent,
         provider: result.response.provider,
@@ -180,7 +214,43 @@ export class Orchestrator {
         tokenUsage: result.response.tokenUsage,
       });
 
-      // Cache the response
+      // Confidence-gated escalation: if the response contains a low-confidence
+      // signal, re-execute with a deeper model for higher-quality analysis.
+      if (this.adaptiveRouter && !request.preferredProvider) {
+        const confidence = this.extractConfidence(response.content);
+        if (
+          confidence !== null &&
+          this.adaptiveRouter.shouldEscalate(confidence)
+        ) {
+          const escalationTarget = this.adaptiveRouter.getEscalationTarget(
+            request.intent,
+            result.response.provider
+          );
+          if (escalationTarget) {
+            this.telemetry?.emit({
+              type: "escalation",
+              intent: request.intent,
+              provider: escalationTarget,
+              metadata: {
+                originalProvider: result.response.provider,
+                originalConfidence: confidence,
+              },
+            });
+            const escalated = await this.executeInner({
+              ...request,
+              preferredProvider: escalationTarget,
+            });
+            escalated.metadata = {
+              ...escalated.metadata,
+              escalatedFrom: result.response.provider,
+              originalConfidence: confidence,
+            };
+            this.onComplete(escalated);
+            return escalated;
+          }
+        }
+      }
+
       this.responseCache?.set({
         intent: request.intent,
         prompt: request.prompt,
@@ -213,6 +283,18 @@ export class Orchestrator {
       this.onError(err);
       throw err;
     }
+  }
+
+  private extractConfidence(content: string): number | null {
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return null;
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (typeof parsed.confidence === "number") return parsed.confidence;
+    } catch {
+      // Not JSON or no confidence field
+    }
+    return null;
   }
 
   async fan(

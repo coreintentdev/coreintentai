@@ -397,6 +397,183 @@ export const ExecutionPlanSchema = z.object({
 export type ExecutionPlan = z.infer<typeof ExecutionPlanSchema>;
 
 // ---------------------------------------------------------------------------
+// Technical Analysis
+// ---------------------------------------------------------------------------
+
+export const TrendPhase = z.enum([
+  "impulse",
+  "correction",
+  "consolidation",
+  "reversal",
+  "breakout",
+]);
+
+export const PatternType = z.enum(["continuation", "reversal", "bilateral"]);
+
+export const SRStrength = z.enum(["weak", "moderate", "strong", "major"]);
+
+export const SRType = z.enum(["horizontal", "dynamic", "volume", "fibonacci"]);
+
+export const DivergenceType = z.enum([
+  "none",
+  "bullish_regular",
+  "bearish_regular",
+  "bullish_hidden",
+  "bearish_hidden",
+]);
+
+export const TechnicalAnalysisSchema = z.object({
+  ticker: z.string(),
+  timeframe: z.string(),
+  trend: z.object({
+    direction: z.enum(["bullish", "bearish", "neutral"]),
+    strength: z.number().min(0).max(1),
+    phase: TrendPhase,
+    higherTimeframeBias: z.enum(["bullish", "bearish", "neutral"]),
+    description: z.string(),
+  }),
+  patterns: z.array(
+    z.object({
+      name: z.string(),
+      type: PatternType,
+      timeframe: z.string(),
+      completionPct: z.number().min(0).max(100),
+      projectedTarget: z.number().optional(),
+      reliability: z.number().min(0).max(1),
+      description: z.string(),
+    })
+  ),
+  indicators: z.array(
+    z.object({
+      name: z.string(),
+      value: z.string(),
+      signal: z.enum(["bullish", "bearish", "neutral"]),
+      strength: z.number().min(0).max(1),
+      divergence: DivergenceType,
+    })
+  ),
+  supportResistance: z.object({
+    supports: z.array(
+      z.object({
+        price: z.number(),
+        strength: SRStrength,
+        type: SRType,
+        touchCount: z.number().int().min(0),
+        description: z.string(),
+      })
+    ),
+    resistances: z.array(
+      z.object({
+        price: z.number(),
+        strength: SRStrength,
+        type: SRType,
+        touchCount: z.number().int().min(0),
+        description: z.string(),
+      })
+    ),
+    keyLevel: z.number(),
+    keyLevelDescription: z.string(),
+  }),
+  volumeAnalysis: z.object({
+    trend: z.enum(["increasing", "decreasing", "stable"]),
+    priceVolumeRelationship: z.enum(["confirming", "diverging", "neutral"]),
+    notableActivity: z.string(),
+    vwapPosition: z.enum(["above", "below", "at"]),
+  }),
+  scenarios: z.object({
+    bullCase: z.object({
+      trigger: z.string(),
+      target: z.number(),
+      probability: z.number().min(0).max(1),
+      invalidation: z.string(),
+    }),
+    bearCase: z.object({
+      trigger: z.string(),
+      target: z.number(),
+      probability: z.number().min(0).max(1),
+      invalidation: z.string(),
+    }),
+    baseCase: z.object({
+      description: z.string(),
+      range: z.object({
+        low: z.number(),
+        high: z.number(),
+      }),
+      probability: z.number().min(0).max(1),
+    }),
+  }),
+  overallBias: z.enum([
+    "strongly_bullish",
+    "bullish",
+    "slightly_bullish",
+    "neutral",
+    "slightly_bearish",
+    "bearish",
+    "strongly_bearish",
+  ]),
+  confidence: z.number().min(0).max(1),
+  timeframeConflicts: z.array(z.string()),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type TechnicalAnalysis = z.infer<typeof TechnicalAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
+// Structured Research
+// ---------------------------------------------------------------------------
+
+export const ResearchFindingSchema = z.object({
+  title: z.string(),
+  content: z.string(),
+  relevance: z.number().min(0).max(1),
+  source: z.string().optional(),
+  recency: z.enum(["live", "today", "this_week", "this_month", "older"]).optional(),
+});
+
+export type ResearchFinding = z.infer<typeof ResearchFindingSchema>;
+
+export const StructuredResearchSchema = z.object({
+  query: z.string(),
+  ticker: z.string().optional(),
+  keyFindings: z.array(ResearchFindingSchema),
+  analystConsensus: z.object({
+    rating: z.enum(["strong_buy", "buy", "hold", "sell", "strong_sell"]).optional(),
+    priceTarget: z.number().optional(),
+    numberOfAnalysts: z.number().int().min(0).optional(),
+    summary: z.string(),
+  }),
+  risks: z.array(
+    z.object({
+      description: z.string(),
+      severity: z.enum(["low", "medium", "high", "critical"]),
+      likelihood: z.enum(["unlikely", "possible", "likely", "near_certain"]).optional(),
+    })
+  ),
+  catalysts: z.array(
+    z.object({
+      event: z.string(),
+      expectedDate: z.string().optional(),
+      impact: z.enum(["positive", "negative", "uncertain"]),
+      magnitude: z.enum(["minor", "moderate", "major"]).optional(),
+    })
+  ),
+  competitiveLandscape: z.string().optional(),
+  sources: z.array(
+    z.object({
+      name: z.string(),
+      url: z.string().optional(),
+      credibility: z.enum(["primary", "secondary", "opinion"]).optional(),
+    })
+  ),
+  confidence: z.number().min(0).max(1),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type StructuredResearch = z.infer<typeof StructuredResearchSchema>;
+
+// ---------------------------------------------------------------------------
 // Multi-Model Consensus
 // ---------------------------------------------------------------------------
 
