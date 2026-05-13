@@ -9,6 +9,8 @@ import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js
 import { AdaptiveRouter, type AdaptiveRouterOptions } from "./adaptive-router.js";
 import { ResponseCache, type ResponseCacheOptions } from "./response-cache.js";
 import { Telemetry } from "./telemetry.js";
+import { CostTracker } from "./cost-tracker.js";
+import { RateLimiter, type RateLimiterOptions } from "./rate-limiter.js";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
@@ -18,6 +20,8 @@ export interface OrchestratorOptions {
   adaptiveRouting?: Partial<AdaptiveRouterOptions> | false;
   cache?: Partial<ResponseCacheOptions> | false;
   telemetry?: boolean;
+  costTracking?: boolean;
+  rateLimiter?: Partial<RateLimiterOptions> | false;
   onRoute?: (request: OrchestrationRequest, providers: string[]) => void;
   onComplete?: (response: OrchestrationResponse) => void;
   onError?: (error: Error) => void;
@@ -31,6 +35,8 @@ export class Orchestrator {
   private adaptiveRouter: AdaptiveRouter | null;
   private responseCache: ResponseCache | null;
   private telemetry: Telemetry | null;
+  private costTracker: CostTracker | null;
+  private rateLimiter: RateLimiter | null;
   private onRoute: (request: OrchestrationRequest, providers: string[]) => void;
   private onComplete: (response: OrchestrationResponse) => void;
   private onError: (error: Error) => void;
@@ -49,6 +55,12 @@ export class Orchestrator {
       ? null
       : new ResponseCache(typeof options.cache === "object" ? options.cache : undefined);
     this.telemetry = options.telemetry === false ? null : new Telemetry();
+    this.costTracker = options.costTracking === false ? null : new CostTracker();
+    this.rateLimiter = options.rateLimiter === false
+      ? null
+      : options.rateLimiter
+        ? new RateLimiter(typeof options.rateLimiter === "object" ? options.rateLimiter : undefined)
+        : null;
     this.onRoute = options.onRoute ?? (() => {});
     this.onComplete = options.onComplete ?? (() => {});
     this.onError = options.onError ?? (() => {});
@@ -68,6 +80,14 @@ export class Orchestrator {
 
   getTelemetry(): Telemetry | null {
     return this.telemetry;
+  }
+
+  getCostTracker(): CostTracker | null {
+    return this.costTracker;
+  }
+
+  getRateLimiter(): RateLimiter | null {
+    return this.rateLimiter;
   }
 
   async execute(
@@ -104,6 +124,14 @@ export class Orchestrator {
       request.intent,
       request.preferredProvider
     );
+
+    // Filter out rate-limited providers
+    if (this.rateLimiter) {
+      providers = providers.filter((p) => this.rateLimiter!.canRequest(p).allowed);
+      if (providers.length === 0) {
+        throw new Error("All providers are rate-limited. Try again later.");
+      }
+    }
 
     // Use adaptive routing if available (rerank by learned performance)
     if (this.adaptiveRouter && !request.preferredProvider) {
@@ -172,12 +200,33 @@ export class Orchestrator {
         latencyMs,
       });
 
+      // Track cost
+      let costUsd: number | undefined;
+      if (this.costTracker) {
+        const entry = this.costTracker.record(
+          result.response.provider,
+          request.intent,
+          result.response.tokenUsage
+        );
+        costUsd = entry.costUsd;
+      }
+
+      // Record rate limiter usage
+      if (this.rateLimiter) {
+        this.rateLimiter.recordRequest(
+          result.response.provider,
+          result.response.tokenUsage.totalTokens,
+          costUsd ?? 0
+        );
+      }
+
       this.telemetry?.emit({
         type: "request_complete",
         intent: request.intent,
         provider: result.response.provider,
         latencyMs,
         tokenUsage: result.response.tokenUsage,
+        metadata: costUsd !== undefined ? { costUsd } : undefined,
       });
 
       // Cache the response
@@ -248,3 +297,7 @@ export type {
   TelemetryListener,
   TelemetrySnapshot,
 } from "./telemetry.js";
+export { CostTracker } from "./cost-tracker.js";
+export type { CostEntry, CostSnapshot } from "./cost-tracker.js";
+export { RateLimiter } from "./rate-limiter.js";
+export type { RateLimiterOptions, RateLimitStatus } from "./rate-limiter.js";

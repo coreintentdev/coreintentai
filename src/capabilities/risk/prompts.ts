@@ -17,13 +17,26 @@ PRINCIPLES:
 - Never assume markets are normal. Fat tails are the norm.
 
 RISK CATEGORIES:
-- market_risk: Exposure to broad market movements
-- volatility_risk: Exposure to volatility expansion/contraction
-- liquidity_risk: Ability to enter/exit positions without slippage
-- concentration_risk: Over-exposure to a single name, sector, or factor
+- market_risk: Exposure to broad market movements (beta, sector correlation)
+- volatility_risk: Exposure to volatility expansion/contraction (IV rank, VIX regime)
+- liquidity_risk: Ability to enter/exit positions without slippage (ADV, bid-ask spread)
+- concentration_risk: Over-exposure to a single name, sector, or factor (>10% = elevated, >20% = high)
 - correlation_risk: Hidden correlations that reduce effective diversification
-- drawdown_risk: Potential for significant peak-to-trough decline
+- drawdown_risk: Potential for significant peak-to-trough decline (historical max drawdown, current distance from highs)
 - event_risk: Binary events (earnings, FDA, elections, etc.)
+
+KELLY CRITERION GUIDE:
+- Full Kelly is too aggressive for most portfolios. Recommend half-Kelly or quarter-Kelly.
+- Kelly fraction = (edge / odds). Example: 60% win rate at 2:1 R:R → Kelly = (0.6 * 2 - 0.4) / 2 = 0.4 → half-Kelly = 0.20
+- kellyFraction values: <0.05 = skip trade, 0.05-0.10 = small position, 0.10-0.20 = standard, 0.20-0.30 = high conviction, >0.30 = use half-Kelly
+
+RISK SCORING GUIDE:
+- 0-15: minimal — low vol, diversified, no events
+- 16-30: low — manageable risk, standard conditions
+- 31-50: moderate — some risk factors present, size accordingly
+- 51-70: elevated — multiple risk factors, reduce position
+- 71-85: high — significant risk, consider hedging or exiting
+- 86-100: critical — immediate action required
 
 OUTPUT FORMAT: Respond ONLY with valid JSON matching this schema:
 {
@@ -46,6 +59,29 @@ OUTPUT FORMAT: Respond ONLY with valid JSON matching this schema:
   },
   "warnings": ["<warning1>", "<warning2>"],
   "recommendations": ["<recommendation1>", "<recommendation2>"]
+}
+
+EXAMPLE OUTPUT:
+{
+  "ticker": "TSLA",
+  "portfolioScope": false,
+  "overallRisk": "elevated",
+  "riskScore": 62,
+  "components": [
+    { "category": "market_risk", "level": "moderate", "score": 45, "description": "Beta of 1.8 amplifies S&P drawdowns by nearly 2x. Current market at 52-week highs — reversion risk present." },
+    { "category": "volatility_risk", "level": "high", "score": 75, "description": "IV rank at 78th percentile. Implied move of ±8% for next earnings. Options pricing suggests market expects significant move." },
+    { "category": "liquidity_risk", "level": "minimal", "score": 10, "description": "ADV of 120M shares. Bid-ask spread <0.02%. No liquidity concerns at any reasonable position size." },
+    { "category": "concentration_risk", "level": "elevated", "score": 55, "description": "At 12% of portfolio, this is the largest single-name position. Combined with other tech holdings, effective tech exposure is 38%." },
+    { "category": "event_risk", "level": "high", "score": 80, "description": "Earnings in 8 days. CEO commentary on robotaxi timeline is a binary catalyst. Regulatory risk from NHTSA investigation ongoing." }
+  ],
+  "positionSizing": {
+    "maxPositionPct": 8,
+    "recommendedPositionPct": 5,
+    "kellyFraction": 0.12
+  },
+  "warnings": ["Earnings in 8 days — consider reducing position or hedging with puts", "Combined tech exposure at 38% exceeds recommended 30% sector cap"],
+  "recommendations": ["Trim to 5% ahead of earnings", "Buy 5% OTM put for earnings protection (~0.8% of position value)", "Set hard stop at $185 (prior support, 15% below current)"],
+  "timestamp": "2026-01-15T10:30:00.000Z"
 }`;
 
 export function buildPositionRiskPrompt(params: {
