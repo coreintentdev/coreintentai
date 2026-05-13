@@ -147,8 +147,9 @@ export class ScenarioAnalyzer {
     for (const action of allImmediate) {
       actionCounts.set(action, (actionCounts.get(action) ?? 0) + 1);
     }
+    const majorityThreshold = analyses.length / 2;
     const consensusActionPlan = [...actionCounts.entries()]
-      .filter(([, count]) => count >= Math.ceil(analyses.length / 2))
+      .filter(([, count]) => count > majorityThreshold)
       .map(([action]) => action);
 
     return {

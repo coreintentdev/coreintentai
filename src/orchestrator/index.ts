@@ -211,12 +211,16 @@ export class Orchestrator {
         costUsd = entry.costUsd;
       }
 
-      // Record rate limiter usage
+      // Record rate limiter usage — estimate cost even without costTracker
       if (this.rateLimiter) {
+        const cost = costUsd ?? CostTracker.estimateCostStatic(
+          result.response.provider,
+          result.response.tokenUsage
+        );
         this.rateLimiter.recordRequest(
           result.response.provider,
           result.response.tokenUsage.totalTokens,
-          costUsd ?? 0
+          cost
         );
       }
 

@@ -35,6 +35,10 @@ export class CostTracker {
   private entries: CostEntry[] = [];
   private startedAt = Date.now();
   private customPricing: Record<ModelProvider, ModelPricing>;
+  private lifetimeCostUsd = 0;
+  private lifetimeInputTokens = 0;
+  private lifetimeOutputTokens = 0;
+  private lifetimeRequestCount = 0;
 
   constructor(pricing?: Partial<Record<ModelProvider, Partial<ModelPricing>>>) {
     this.customPricing = {
@@ -42,6 +46,13 @@ export class CostTracker {
       grok: { ...PRICING.grok, ...pricing?.grok },
       perplexity: { ...PRICING.perplexity, ...pricing?.perplexity },
     };
+  }
+
+  static estimateCostStatic(provider: ModelProvider, tokenUsage: TokenUsage): number {
+    const pricing = PRICING[provider];
+    const inputCost = (tokenUsage.inputTokens / 1_000_000) * pricing.inputPer1M;
+    const outputCost = (tokenUsage.outputTokens / 1_000_000) * pricing.outputPer1M;
+    return inputCost + outputCost;
   }
 
   estimateCost(provider: ModelProvider, tokenUsage: TokenUsage): number {
@@ -61,6 +72,12 @@ export class CostTracker {
       costUsd,
       timestamp: Date.now(),
     };
+
+    this.lifetimeCostUsd += costUsd;
+    this.lifetimeInputTokens += tokenUsage.inputTokens;
+    this.lifetimeOutputTokens += tokenUsage.outputTokens;
+    this.lifetimeRequestCount++;
+
     this.entries.push(entry);
     if (this.entries.length > 10_000) {
       this.entries.shift();
@@ -71,15 +88,8 @@ export class CostTracker {
   getSnapshot(): CostSnapshot {
     const costByProvider: Record<string, { costUsd: number; requests: number; tokens: number }> = {};
     const costByIntent: Record<string, { costUsd: number; requests: number }> = {};
-    let totalCost = 0;
-    let totalInput = 0;
-    let totalOutput = 0;
 
     for (const entry of this.entries) {
-      totalCost += entry.costUsd;
-      totalInput += entry.inputTokens;
-      totalOutput += entry.outputTokens;
-
       if (!costByProvider[entry.provider]) {
         costByProvider[entry.provider] = { costUsd: 0, requests: 0, tokens: 0 };
       }
@@ -96,16 +106,16 @@ export class CostTracker {
 
     const elapsedMs = Date.now() - this.startedAt;
     const elapsedHours = elapsedMs / 3_600_000;
-    const projectedDaily = elapsedHours > 0 ? (totalCost / elapsedHours) * 24 : 0;
+    const projectedDaily = elapsedHours > 0 ? (this.lifetimeCostUsd / elapsedHours) * 24 : 0;
 
     return {
-      totalCostUsd: totalCost,
-      totalInputTokens: totalInput,
-      totalOutputTokens: totalOutput,
-      requestCount: this.entries.length,
+      totalCostUsd: this.lifetimeCostUsd,
+      totalInputTokens: this.lifetimeInputTokens,
+      totalOutputTokens: this.lifetimeOutputTokens,
+      requestCount: this.lifetimeRequestCount,
       costByProvider: costByProvider as CostSnapshot["costByProvider"],
       costByIntent,
-      avgCostPerRequest: this.entries.length > 0 ? totalCost / this.entries.length : 0,
+      avgCostPerRequest: this.lifetimeRequestCount > 0 ? this.lifetimeCostUsd / this.lifetimeRequestCount : 0,
       projectedDailyCostUsd: projectedDaily,
     };
   }
@@ -119,6 +129,10 @@ export class CostTracker {
 
   reset(): void {
     this.entries = [];
+    this.lifetimeCostUsd = 0;
+    this.lifetimeInputTokens = 0;
+    this.lifetimeOutputTokens = 0;
+    this.lifetimeRequestCount = 0;
     this.startedAt = Date.now();
   }
 }
