@@ -9,6 +9,12 @@ import type { ModelProvider, TokenUsage } from "../types/index.js";
 import { getAdapter } from "../models/index.js";
 import type { CompletionRequest, CompletionResponse } from "../models/base.js";
 import type { CircuitBreaker } from "./circuit-breaker.js";
+import {
+  classifyError,
+  getRetryDelay,
+  shouldOpenCircuit,
+  type ClassifiedError,
+} from "./errors.js";
 
 export interface FallbackOptions {
   providers: ModelProvider[];
@@ -23,7 +29,7 @@ export interface FallbackResult {
   response: CompletionResponse;
   fallbackUsed: boolean;
   attemptedProviders: ModelProvider[];
-  errors: Array<{ provider: ModelProvider; error: string }>;
+  errors: Array<{ provider: ModelProvider; error: string; category?: string }>;
 }
 
 /**
@@ -41,11 +47,11 @@ export async function executeWithFallback(
     : providers;
 
   const attemptedProviders: ModelProvider[] = [];
-  const errors: Array<{ provider: ModelProvider; error: string }> = [];
+  const errors: Array<{ provider: ModelProvider; error: string; category?: string }> = [];
 
   for (const provider of chain) {
     if (circuitBreaker && !circuitBreaker.canAttempt(provider)) {
-      errors.push({ provider, error: "circuit open" });
+      errors.push({ provider, error: "circuit open", category: "circuit_open" });
       continue;
     }
 
@@ -74,19 +80,20 @@ export async function executeWithFallback(
       } catch (err) {
         const error =
           err instanceof Error ? err : new Error(String(err));
+        const classified = classifyError(error, provider);
 
         onFailure?.(provider, error);
-        circuitBreaker?.recordFailure(provider);
-        errors.push({ provider, error: error.message });
+        if (shouldOpenCircuit(classified)) {
+          circuitBreaker?.recordFailure(provider);
+        }
+        errors.push({ provider, error: error.message, category: classified.category });
 
-        // Only retry on the same provider for transient errors
-        if (!isTransient(error) || attempt === maxRetries) {
+        if (!classified.retryable || attempt === maxRetries) {
           break;
         }
 
-        const baseDelay = Math.min(1000 * 2 ** (attempt - 1), 8000);
-        const jitter = Math.random() * baseDelay * 0.3;
-        await sleep(baseDelay + jitter);
+        const delay = getRetryDelay(classified, attempt);
+        if (delay > 0) await sleep(delay);
       }
     }
   }
@@ -100,22 +107,6 @@ export async function executeWithFallback(
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function isTransient(error: Error): boolean {
-  const msg = error.message.toLowerCase();
-  return (
-    msg.includes("timeout") ||
-    msg.includes("rate limit") ||
-    msg.includes("429") ||
-    msg.includes("502") ||
-    msg.includes("503") ||
-    msg.includes("econnreset") ||
-    msg.includes("econnrefused") ||
-    msg.includes("socket hang up") ||
-    msg.includes("network") ||
-    msg.includes("fetch failed")
-  );
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));

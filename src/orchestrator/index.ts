@@ -9,6 +9,7 @@ import { CircuitBreaker, type CircuitBreakerOptions } from "./circuit-breaker.js
 import { AdaptiveRouter, type AdaptiveRouterOptions } from "./adaptive-router.js";
 import { ResponseCache, type ResponseCacheOptions } from "./response-cache.js";
 import { Telemetry } from "./telemetry.js";
+import { randomUUID } from "node:crypto";
 
 export interface OrchestratorOptions {
   maxRetries?: number;
@@ -73,6 +74,8 @@ export class Orchestrator {
   async execute(
     request: OrchestrationRequest
   ): Promise<OrchestrationResponse> {
+    const correlationId = request.correlationId ?? randomUUID();
+
     // Check cache first
     if (this.responseCache) {
       const cached = this.responseCache.get(
@@ -86,6 +89,7 @@ export class Orchestrator {
           type: "cache_hit",
           intent: request.intent,
           provider: cached.provider,
+          metadata: { correlationId },
         });
         return {
           content: cached.content,
@@ -94,10 +98,15 @@ export class Orchestrator {
           latencyMs: 0,
           tokenUsage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
           fallbackUsed: false,
+          correlationId,
           metadata: { fromCache: true },
         };
       }
-      this.telemetry?.emit({ type: "cache_miss", intent: request.intent });
+      this.telemetry?.emit({
+        type: "cache_miss",
+        intent: request.intent,
+        metadata: { correlationId },
+      });
     }
 
     let providers: ModelProvider[] = getProviderChain(
@@ -123,6 +132,7 @@ export class Orchestrator {
       type: "request_start",
       intent: request.intent,
       provider: chain[0],
+      metadata: { correlationId },
     });
 
     const start = performance.now();
@@ -146,7 +156,7 @@ export class Orchestrator {
           type: "fallback_triggered",
           intent: request.intent,
           provider: result.response.provider,
-          metadata: { attemptedProviders: result.attemptedProviders },
+          metadata: { correlationId, attemptedProviders: result.attemptedProviders },
         });
       }
 
@@ -157,6 +167,7 @@ export class Orchestrator {
         latencyMs,
         tokenUsage: result.response.tokenUsage,
         fallbackUsed: result.fallbackUsed,
+        correlationId,
         metadata: {
           attemptedProviders: result.attemptedProviders,
           errors: result.errors,
@@ -178,6 +189,7 @@ export class Orchestrator {
         provider: result.response.provider,
         latencyMs,
         tokenUsage: result.response.tokenUsage,
+        metadata: { correlationId },
       });
 
       // Cache the response
@@ -208,6 +220,7 @@ export class Orchestrator {
         intent: request.intent,
         provider: chain[0],
         error: err.message,
+        metadata: { correlationId },
       });
 
       this.onError(err);

@@ -8,7 +8,7 @@ Based in: New Zealand (NEVER register anything in Australia)
 ## What This Repo IS
 - The **AI intelligence layer** for the CoreIntent trading platform
 - Sovereign multi-model orchestration: Claude, Grok, Perplexity
-- Capabilities: Sentiment analysis, signal generation, risk assessment, regime detection, correlation analysis, agent workflows
+- Capabilities: Sentiment analysis, signal generation, risk assessment, regime detection, correlation analysis, volatility intelligence, portfolio optimization, agent workflows
 - TypeScript library with Zod-validated outputs
 
 ## What This Repo IS NOT
@@ -33,8 +33,8 @@ Based in: New Zealand (NEVER register anything in Australia)
 src/
 ├── config/         # Model configurations, environment-driven
 ├── models/         # Provider adapters (Claude, Grok, Perplexity)
-├── orchestrator/   # Intent router, fallback engine, circuit breaker, core orchestrator
-├── capabilities/   # Domain-specific AI capabilities (11 modules)
+├── orchestrator/   # Intent router, fallback engine, circuit breaker, error classification, core orchestrator
+├── capabilities/   # Domain-specific AI capabilities (13 modules)
 │   ├── sentiment/  # Market sentiment analysis
 │   ├── signals/    # Trading signal generation
 │   ├── risk/       # Risk assessment framework
@@ -45,7 +45,9 @@ src/
 │   ├── consensus/  # Multi-model consensus engine
 │   ├── momentum/   # Momentum scoring and ranking
 │   ├── narrative/  # Narrative intelligence (story-driven markets)
-│   └── liquidity/  # Liquidity assessment and execution intelligence
+│   ├── liquidity/  # Liquidity assessment and execution intelligence
+│   ├── volatility/ # Volatility intelligence (IV/RV, skew, term structure, regime)
+│   └── portfolio/  # Portfolio optimization (MVO, Black-Litterman, risk parity)
 ├── agents/         # Autonomous trading intelligence agents (incl. StrategyAdvisor, PortfolioWatchdog)
 ├── types/          # Shared TypeScript types + Zod schemas
 ├── utils/          # Shared utilities (robust JSON parser)
@@ -71,6 +73,12 @@ Full event-based telemetry system tracks every request lifecycle: start, complet
 
 ### Structured Output
 All capability outputs are validated with Zod schemas. The AI layer produces typed, parseable data — not free-form text. A robust JSON parser in `utils/json-parser.ts` handles multiple extraction patterns (raw JSON, markdown fences, embedded JSON) with clear error messages.
+
+### Structured Error Classification
+Errors are classified into categories (rate_limit, timeout, network, transient, auth, validation, provider_error, unknown) with per-category retry strategies. Auth and validation errors are non-retryable and don't open circuit breakers. Rate limits use longer backoff than timeouts. Replaces fragile string-matching with a structured taxonomy.
+
+### Request Correlation IDs
+Every orchestration request is assigned a UUID correlation ID (auto-generated or caller-provided). The ID threads through all telemetry events, enabling end-to-end request tracing across providers, fallbacks, and cache layers.
 
 ### Agent Pipeline
 Agents (MarketAnalyst → RiskManager → StrategyAdvisor → TradeExecutor) chain together for full trading workflows. The StrategyAdvisor is a meta-agent that synthesizes intelligence from all capabilities into actionable portfolio strategy with scenario analysis. The PortfolioWatchdog provides real-time multi-dimensional surveillance across all intelligence streams.
