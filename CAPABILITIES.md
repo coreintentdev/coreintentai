@@ -265,6 +265,57 @@ Assesses market microstructure conditions, detects liquidity traps, and provides
 
 ---
 
+### 12. Options Intelligence
+**Class:** `OptionsIntelligence`
+
+Deep options market analysis covering flow interpretation, volatility surface dynamics, strategy recommendation, Greeks exposure, and dealer gamma positioning (GEX). Bridges the critical gap between equity analysis and derivatives-driven market mechanics.
+
+**Methods:**
+- `analyzeFlow()` — Interpret options flow data (sweeps, blocks, unusual volume) to extract directional bias, smart money positioning, and key strike levels
+- `analyzeVolatilitySurface()` — Analyze IV rank, IV/RV spread, skew dynamics, and term structure to identify volatility regime and mispricings
+- `recommendStrategy()` — Generate optimal options strategy with exact legs, Greeks exposure, management rules, and alternatives based on outlook, risk tolerance, and IV environment
+- `analyzeGreeks()` — Full first- and second-order Greeks analysis with scenario P&L modeling and hedging recommendations
+- `analyzeGex()` — Gamma Exposure (GEX) profiling — dealer positioning, gamma flip points, pin risk, and volatility suppression/amplification mechanics
+- `consensus()` — Multi-model options flow analysis with agreement scoring
+
+**Flow Types:** sweep, block, unusual_volume, opening_position, closing_position, roll, spread
+
+**Strategy Categories:** directional, volatility, income, hedge, arbitrage
+
+**Output Schemas:**
+- `OptionsFlow` — Flow bias, significant trades, smart money signal, key levels (max pain, gamma flip)
+- `VolatilitySurface` — IV rank/percentile, skew index, term structure shape, surface signals, vol regime
+- `OptionsStrategy` — Strategy legs, Greeks exposure, management rules, P&L analysis, risk/reward
+- `GreeksAnalysis` — Net Greeks + second-order (gamma risk, charm, vanna, volga), scenario analysis, risk metrics
+- `GexAnalysis` — Net GEX, regime, flip point, key levels with mechanisms, dealer hedging dynamics
+
+---
+
+## Analytics & Performance
+
+### Performance Tracker
+**Class:** `PerformanceTracker`
+
+Tracks signal outcomes and feeds quality scores back into the Adaptive Router, closing the intelligence feedback loop. Every signal the system generates can be recorded, resolved against actual outcomes, and used to improve future model selection.
+
+**Methods:**
+- `recordSignal()` — Record a generated signal with entry price, provider, and intent
+- `resolveSignal()` — Mark a signal as win/loss/breakeven with exit price (auto-feeds adaptive router)
+- `getSnapshot()` — Full performance snapshot: win rate, profit factor, expectancy, best/worst trades, breakdowns by provider and intent
+- `getWinRateByProvider()` — Per-provider win rate for quick assessment
+- `getPendingSignals()` — List all unresolved signals for monitoring
+- `reset()` — Clear all tracking data
+
+**Output:** Structured `PerformanceSnapshot` with:
+- Win rate, average win %, average loss %
+- Profit factor and expectancy
+- Best and worst trades
+- Per-provider performance breakdown
+- Per-intent performance breakdown
+- Adaptive router feedback integration
+
+---
+
 ## Resilience & Intelligence Layer
 
 ### Adaptive Router
@@ -374,7 +425,7 @@ Output includes: Health Score (0-100), Alert Level, Top Threats, Narrative Shift
 - **Zod** — Runtime schema validation for all AI outputs
 - **Anthropic SDK** — Native Claude integration
 - **OpenAI SDK** — Grok and Perplexity via OpenAI-compatible APIs
-- **Vitest** — Fast testing with 365+ tests
+- **Vitest** — Fast testing with 440+ tests
 - **Zero external runtime dependencies** beyond the AI SDKs
 
 ---
