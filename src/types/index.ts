@@ -59,6 +59,8 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
+  cacheCreationTokens?: number;
+  cacheReadTokens?: number;
 }
 
 // ---------------------------------------------------------------------------

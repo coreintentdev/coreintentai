@@ -65,6 +65,21 @@ export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
 
 // ---------------------------------------------------------------------------
+// Intelligence Pipeline
+// ---------------------------------------------------------------------------
+export { MarketIntelligencePipeline } from "./pipeline/index.js";
+export {
+  IntelligenceBriefSchema,
+  SYNTHESIS_SYSTEM_PROMPT,
+} from "./pipeline/index.js";
+export type {
+  IntelligenceBrief,
+  CapabilitySignal,
+  Divergence,
+  IntelligenceCapability,
+} from "./pipeline/index.js";
+
+// ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
 export {
@@ -133,6 +148,12 @@ export type {
   PipelineStage,
   PipelineResult,
 } from "./types/index.js";
+
+export {
+  CapabilitySignalSchema,
+  DivergenceSchema,
+  SignalDirection,
+} from "./pipeline/types.js";
 
 export {
   SentimentResultSchema,
