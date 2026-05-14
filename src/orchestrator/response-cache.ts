@@ -5,6 +5,7 @@ interface CacheEntry {
   content: string;
   provider: ModelProvider;
   model: string;
+  intent: TaskIntent;
   cachedAt: number;
   ttlMs: number;
   hits: number;
@@ -121,6 +122,7 @@ export class ResponseCache {
       content: params.content,
       provider: params.provider,
       model: params.model,
+      intent: params.intent,
       cachedAt: Date.now(),
       ttlMs: this.getTtl(params.intent),
       hits: 0,
@@ -134,8 +136,7 @@ export class ResponseCache {
     }
 
     for (const [key, entry] of this.cache) {
-      void entry;
-      if (key.startsWith(intent)) {
+      if (entry.intent === intent) {
         this.cache.delete(key);
       }
     }
