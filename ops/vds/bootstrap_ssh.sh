@@ -17,5 +17,5 @@ if [[ -n "${ZYNTHIO_DC_SSH_KEY:-}" ]]; then
   ssh -i "$KEY_PATH" -o BatchMode=yes -o ConnectTimeout=12 \
     "${VDS_USER}@${VDS_HOST}" "df -h / | tail -1" && echo "VDS SSH OK" || echo "VDS SSH probe failed (Tailscale/public path)"
 else
-  echo "ZYNTHIO_DC_SSH_KEY not set — Cloud Agent has no VDS hands. Add secret in Cursor dashboard."
+  echo "ZYNTHIO_DC_SSH_KEY not set — add once in Cursor environment secrets (do not paste in chat)."
 fi

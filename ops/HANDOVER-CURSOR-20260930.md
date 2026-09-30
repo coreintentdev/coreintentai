@@ -1,9 +1,15 @@
 # HANDOVER — Cursor Session 20260930
 
-See full operator handover: copy from Cloud artifacts or read sibling file after sync.
+**VDS lane:** `ops/vds/vds.sh` — not paste-keys, not guess-SSH.
 
-**Quick status:** PR #30 pending VDS apply. Kelvin team = nica.futbol. Kelvin songs = kelvinjimenez.com (broken). Cloud needs ZYNTHIO_DC_SSH_KEY.
+```bash
+ops/vds/vds.sh status
+ops/vds/vds.sh deploy kelvin
+ops/vds/vds.sh prove kelvin
+```
 
-**Full handover:** `/opt/cursor/artifacts/HANDOVER-CURSOR-SESSION-20260930.md`
+**Secrets (dashboard once):** `ZYNTHIO_DC_SSH_KEY`, `HEADSCALE_PREAUTH_KEY` + `HEADSCALE_LOGIN_SERVER` (or `TAILSCALE_AUTHKEY`).
 
-336
+**Kelvin:** team = `nica.futbol` only. Song domains = `kelvinjimenez.com`, `kelinsongs.com` (deploy package in `ops/vds/kelvin-domains/`).
+
+**PR:** #30 on branch `cursorvds-kelvin-deploy-238d`.
