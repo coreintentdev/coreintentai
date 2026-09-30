@@ -1,0 +1,6 @@
+{
+  "name": "coreintentai-vds-capable",
+  "install": "npm install",
+  "start": "bash ops/vds/bootstrap_ssh.sh || true",
+  "terminals": []
+}
