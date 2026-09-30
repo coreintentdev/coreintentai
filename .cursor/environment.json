@@ -1,0 +1,10 @@
+{
+  "name": "coreintentai-vds-capable",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "user": "ubuntu",
+  "install": "npm install",
+  "start": "bash ops/vds/bootstrap_vds.sh || true",
+  "terminals": []
+}
