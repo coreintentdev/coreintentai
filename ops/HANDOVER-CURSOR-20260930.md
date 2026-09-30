@@ -8,7 +8,7 @@ ops/vds/vds.sh deploy kelvin
 ops/vds/vds.sh prove kelvin
 ```
 
-**Secrets (dashboard once):** `ZYNTHIO_DC_SSH_KEY`, `HEADSCALE_PREAUTH_KEY` + `HEADSCALE_LOGIN_SERVER` (or `TAILSCALE_AUTHKEY`).
+**Secrets (dashboard once):** `ZYNTHIO_DC_SSH_KEY`, `HEADSCALE_PREAUTH_KEY` (mesh = `zynthio` @ `headscale.kamals.pro`, login server defaulted in bootstrap).
 
 **Kelvin:** team = `nica.futbol` only. Song domains = `kelvinjimenez.com`, `kelinsongs.com` (deploy package in `ops/vds/kelvin-domains/`).
 

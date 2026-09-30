@@ -20,10 +20,9 @@ start_tailscaled() {
 }
 
 join_mesh() {
-  local args=()
-  if [[ -n "${HEADSCALE_LOGIN_SERVER:-}" ]]; then
-    args+=(--login-server="$HEADSCALE_LOGIN_SERVER")
-  fi
+  # Zynthio mesh — same Headscale as Mac "zynthio @ headscale.kamals.pro"
+  local login_server="${HEADSCALE_LOGIN_SERVER:-https://headscale.kamals.pro}"
+  local args=(--login-server="$login_server")
 
   if [[ -n "${HEADSCALE_PREAUTH_KEY:-}" ]]; then
     sudo tailscale --socket="$TS_SOCKET" up "${args[@]}" --auth-key="$HEADSCALE_PREAUTH_KEY" --accept-routes --ssh=false
@@ -37,7 +36,7 @@ join_mesh() {
     return 0
   fi
 
-  echo "No mesh key — set HEADSCALE_PREAUTH_KEY (+ HEADSCALE_LOGIN_SERVER) or TAILSCALE_AUTHKEY in Cursor environment secrets."
+  echo "No mesh key — set HEADSCALE_PREAUTH_KEY in Cursor environment secrets (login server defaults to https://headscale.kamals.pro)."
   return 1
 }
 

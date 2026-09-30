@@ -21,7 +21,7 @@ Commands:
 
 Secrets (Cursor environment dashboard — one-time, never paste in chat):
   ZYNTHIO_DC_SSH_KEY          SSH private key (~/.ssh/zynthio_dc on Mac)
-  HEADSCALE_PREAUTH_KEY       Headscale preauth key (+ HEADSCALE_LOGIN_SERVER)
+  HEADSCALE_PREAUTH_KEY       Headscale preauth key (login server defaults to https://headscale.kamals.pro)
   or TAILSCALE_AUTHKEY        Tailscale auth key
 EOF
 }
@@ -41,10 +41,11 @@ mesh_reachable() {
 cmd_status() {
   local ok=0
   echo "=== VDS status ==="
+  echo "mesh:     headscale.kamals.pro (zynthio)"
   if has_mesh_key; then
     echo "mesh key: present"
   else
-    echo "mesh key: MISSING (HEADSCALE_PREAUTH_KEY or TAILSCALE_AUTHKEY)"
+    echo "mesh key: MISSING (HEADSCALE_PREAUTH_KEY)"
     ok=1
   fi
   if has_ssh_key; then

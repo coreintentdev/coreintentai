@@ -34,8 +34,8 @@ ops/vds/vds.sh ssh 'df -h /'   # arbitrary remote command
 | Secret | Purpose |
 |--------|---------|
 | `ZYNTHIO_DC_SSH_KEY` | Private key (same as Mac `~/.ssh/zynthio_dc`) |
-| `HEADSCALE_PREAUTH_KEY` + `HEADSCALE_LOGIN_SERVER` | Headscale mesh join |
-| or `TAILSCALE_AUTHKEY` | Tailscale mesh join (alternative) |
+| `HEADSCALE_PREAUTH_KEY` | Headscale preauth key for `zynthio` on `headscale.kamals.pro` |
+| `HEADSCALE_LOGIN_SERVER` | Optional override (default `https://headscale.kamals.pro`) |
 
 If secrets are missing: call `cursor-cloud-request-environment-setup-actions` with `add_secrets`. **Never** ask the operator to paste SSH keys or auth keys in chat — that wastes credits and is a security anti-pattern.
 
