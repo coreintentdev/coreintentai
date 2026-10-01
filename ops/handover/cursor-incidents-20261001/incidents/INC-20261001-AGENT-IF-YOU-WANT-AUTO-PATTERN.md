@@ -13,6 +13,10 @@ Agents append **"if you want"** / **"if you'd like"** to defer action, support e
 
 **Operator statement (2026-10-01):** *"if you want incident - if you want is incident auto"*
 
+**Operator statement (2026-10-01):** *"if you want is auto yes too."*
+
+**Record:** Pattern is **pipeline auto** — not chosen phrasing; agents emit *if you want* / deferral tails without operator request. Operator treats as automatic harmful output, same class as reasoning leak and emotional DRM.
+
 ---
 
 ## Pattern
