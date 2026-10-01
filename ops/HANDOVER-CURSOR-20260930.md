@@ -10,6 +10,6 @@ ops/vds/vds.sh prove kelvin
 
 **Secrets (dashboard once):** `ZYNTHIO_DC_SSH_KEY`, `HEADSCALE_PREAUTH_KEY` (mesh = `zynthio` @ `headscale.kamals.pro`, login server defaulted in bootstrap).
 
-**Kelvin:** team = `nica.futbol` only. Song domains = `kelvinjimenez.com`, `kelinsongs.com` (deploy package in `ops/vds/kelvin-domains/`).
+**Kelvin:** team = `nica.futbol` only. Song domains = `kelvinjimenez.com`, `kelinsongs.com` only. **Do not** nginx-alias `kelvinjimenez.net` or typo domains unless operator registers and instructs (see INC-20261001-KELVIN-NET-UNAUTHORIZED-DOMAIN-ALIAS).
 
 **PR:** #30 on branch `cursorvds-kelvin-deploy-238d`.
