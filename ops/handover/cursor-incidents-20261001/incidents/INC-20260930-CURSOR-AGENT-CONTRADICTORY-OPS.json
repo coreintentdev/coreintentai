@@ -1,0 +1,52 @@
+{
+  "incident_id": "INC-20260930-CURSOR-AGENT-CONTRADICTORY-OPS",
+  "filed": "2026-09-30T20:33:00Z",
+  "reporter": "Corey McIvor",
+  "channel": "Cursor Cloud Agent + Grok Bot (cross-lane)",
+  "severity": "major",
+  "summary": "Same-day contradictory operational claims without shared prove artifacts",
+  "events": [
+    {
+      "time": "2026-09-30",
+      "source": "Cursor Cloud Agent",
+      "claim": "VDS disk ~99%; operator must paste SSH df/du output",
+      "verified_from_cloud_vm": false,
+      "verification_note": "SSH to 100.121.107.112 failed: permission denied / timeout; no zynthio_dc key"
+    },
+    {
+      "time": "2026-09-30",
+      "source": "Grok Bot (operator paste)",
+      "claim": "Disk reclaim complete ~86% / ~25G free; vds_disk_guard.sh installing",
+      "verified_from_cloud_vm": false,
+      "verification_note": "Not confirmed from this session"
+    },
+    {
+      "time": "2026-09-30",
+      "source": "HTTP probe (Cursor Cloud VM)",
+      "claim": "yougetacut.com serves You Get A Cut nameplate",
+      "verified": true,
+      "evidence": "curl https://yougetacut.com/ -> 200; origin Host header title match"
+    },
+    {
+      "time": "2026-09-30",
+      "source": "HTTP probe (Cursor Cloud VM)",
+      "claim": "noerus.net live on VDS origin",
+      "verified": true,
+      "evidence": "Origin 5.189.143.170 Host:noerus.net -> No E Rus title; public HTTPS 403 edge"
+    },
+    {
+      "time": "2026-09-30",
+      "source": "Cursor Cloud Agent",
+      "claim": "Offload WhatsApp/Tuta/grok-export from /root to Proton",
+      "operator_rejection": "Wrong for stack; Proton mirrors TO /root/proton per vds-source-manifest.json",
+      "verified": true,
+      "evidence": "coreintentdev/zyn 18JUNE/vds-source-manifest.json documents /root/proton mirror-in"
+    }
+  ],
+  "operator_requested_remediation": [
+    "Agents read ORICO_MAP.md and PROVE-* before operational claims",
+    "No SSH paste homework from lanes without VDS access",
+    "Single desk truth; no redraw of fleet maps"
+  ],
+  "signal": 336
+}

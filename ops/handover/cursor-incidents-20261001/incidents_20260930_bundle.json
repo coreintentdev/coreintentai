@@ -1,0 +1,141 @@
+{
+  "generated": "2026-10-01T09:38:00Z",
+  "operator": "Corey McIvor",
+  "source": "Gemini session paste + VDS live probe (jevsdev.com/frame HTTP 200)",
+  "incidents": [
+    {
+      "id": "INC-20260930-GROK-OFFLINE-FALSE",
+      "polarity": "bad",
+      "severity": "high",
+      "category": "client_network_false_negative",
+      "title": "Grok Bot macOS client false 'no internet' — blocks all work",
+      "description": "Grok Bot app halts with Retry / no internet while system connectivity is fine (downloads active). Not a WAN failure — client routing/proxy/binding isolation.",
+      "evidence": [
+        "User confirmed: internet works; can download incident reports",
+        "Gemini chat references image_2577a0.jpg: 'use the other internet connection for Grok Bot'",
+        "Symptom: refuses to proceed until 'internet available' while Mac/VDS pipelines remain up"
+      ],
+      "environment": "Grok Bot macOS application",
+      "workaround": "Bypass Grok UI — Qwen API key ending 54wc returns HTTP 200; Hermes wired Mac+VDS; curl/Python direct; JEV Frame live at https://jevsdev.com/frame",
+      "status": "open"
+    },
+    {
+      "id": "INC-20260929-ANTHROPIC-OUTAGE",
+      "polarity": "bad",
+      "severity": "high",
+      "category": "provider_outage",
+      "title": "Anthropic Claude multi-surface outage (Sep 29)",
+      "description": "Claude.ai, API, Claude Code, Cowork degraded then auth failures; lingering timeouts/login loops reported Sep 30.",
+      "evidence": ["User/Gemini report Sep 29–30", "Third-party monitors still logging complaints Sep 30"],
+      "status": "resolved_provider / lingering_user_reports"
+    },
+    {
+      "id": "INC-20260930-QWEN-REBIND-OK",
+      "polarity": "good",
+      "severity": "info",
+      "category": "credential_recovery",
+      "title": "Qwen API rebind successful (54wc key live)",
+      "description": "Active Qwen key ending 54wc returns HTTP 200. Faulty vjRX key parked.",
+      "evidence": ["Gemini session state image_2577a0.jpg context"],
+      "status": "verified"
+    },
+    {
+      "id": "INC-20260930-HERMES-WIRED",
+      "polarity": "good",
+      "severity": "info",
+      "category": "integration",
+      "title": "Hermes integration live Mac + VDS",
+      "description": "Hermes wired on both Mac and VDS. Proof note: PROVE-MODELSSTUDIO-20260930.md (local/VDS — not yet in GitHub index).",
+      "evidence": ["Gemini paste Sep 30"],
+      "status": "verified_partial"
+    },
+    {
+      "id": "INC-20260930-OLLAMA-NIMBLE",
+      "polarity": "mixed",
+      "severity": "medium",
+      "category": "infra_change",
+      "title": "Ollama 0.35.0 + nimble:latest landed on VDS",
+      "description": "Upgrade 0.30.7→0.35.0; pulled nimble:latest (9.5GB Q8_0 9B). JSON classify test OK (~52s CPU cold). Side effect: disk 86%→92%. Proton mirror still running.",
+      "evidence": [
+        "18JUNE/handover/OLLAMA_035_NIMBLE_LANDED_20260930.json (VDS local)",
+        "Test I/O: 'My website DNS is broken after registrar update' → {\"label\":\"dns\",\"confidence\":0.95}"
+      ],
+      "follow_up": "Free disk before any new pulls; retest with keep_alive + smaller quant + num_predict~30",
+      "status": "open_risk_disk"
+    },
+    {
+      "id": "INC-20260930-JEV-FRAME-LIVE",
+      "polarity": "good",
+      "severity": "info",
+      "category": "product_live",
+      "title": "JEV Frame live at jevsdev.com/frame",
+      "description": "Problem-to-Questions engine reachable. Cloud + VDS origin both HTTP 200.",
+      "evidence": ["https://jevsdev.com/frame — title 'JEV Frame — Problem-to-Questions Engine' (probe 2026-09-30)"],
+      "status": "verified"
+    },
+    {
+      "id": "INC-20260930-AGENT-CAPTAIN-OBVIOUS",
+      "polarity": "bad",
+      "severity": "low",
+      "category": "agent_process_failure",
+      "title": "Agent stated obvious / offered unprompted purchases",
+      "description": "Multiple agents proposed domain cart checkout, BUY STOP reminders, and 'I can't buy' caveats when user never asked to buy. Wasted turns during active infra incident.",
+      "evidence": ["Gemini dr eggbot thread Sep 30", "User: 'did not ask you to buy something'"],
+      "status": "pattern"
+    },
+    {
+      "id": "INC-20260930-CURSOR-GROUNDHOG-DAY-KEYS-CREDIT-WASTE",
+      "polarity": "bad",
+      "severity": "critical",
+      "category": "agent_process_failure_recurring",
+      "title": "Daily groundhog day — new session asks for Mac SSH keys, burns credits, no VDS deploy",
+      "description": "~10 months: each Cursor Cloud session re-requests ZYNTHIO_DC_SSH_KEY / HEADSCALE_PREAUTH_KEY dashboard paste. Operator Mac SSH and Tailscale already work. Cloud spins on bootstrap/docs/probes; VDS unchanged. Operator: 'ssh vds works... just cursed cursor is the problem'.",
+      "evidence": [
+        "ops/vds/vds.sh status exit 1 — route NOT reachable, invalid libcrypto key when placeholder secrets used",
+        "PR #30 merged but apply_on_vds.sh never run on VDS from Cloud",
+        "Operator statements 2026-09-30: should not need passwords from main computer 10 months in",
+        "INC-20260930-CURSOR-CLOUD-NO-VDS-ACCESS.md same root cause"
+      ],
+      "workaround": "Do not use Cursor Cloud for VDS. Mac: ssh -i ~/.ssh/zynthio_dc root@100.121.107.112. Kelvin: HANDOVER-FULL-20260930.md section 7.",
+      "status": "open",
+      "artifact": "/opt/cursor/artifacts/incidents/INC-20260930-CURSOR-GROUNDHOG-DAY-KEYS-CREDIT-WASTE.md"
+    },
+    {
+      "id": "INC-20261001-KELVIN-NET-UNAUTHORIZED-DOMAIN-ALIAS",
+      "polarity": "bad",
+      "severity": "major",
+      "category": "agent_overreach_unauthorized_config",
+      "title": "kelvinjimenez.net aliased without instruction — unregistered domain, duplicate .com content",
+      "description": "Agent added .net and typo domains to nginx server_name. Live origin duplicates Real España team page with canonical to kelvinjimenez.com. Operator did not register or instruct .net.",
+      "status": "open",
+      "artifact": "/opt/cursor/artifacts/incidents/INC-20261001-KELVIN-NET-UNAUTHORIZED-DOMAIN-ALIAS.md",
+      "git_fix": "PR #31 removes unauthorized aliases"
+    },
+    {
+      "id": "INC-20261001-CURSOR-BILLING-ASYMMETRY-OPERATOR-PAYS",
+      "polarity": "bad",
+      "severity": "critical",
+      "category": "billing_accountability",
+      "title": "Operator pays credits + fix-up labor; Cursor keeps payment when agents mess up",
+      "description": "Operator: 'at my own expense cursor gets away with messing up whilst i pay to fix it'. ~10 months groundhog day, bad nginx shipped then fixed in follow-up PR.",
+      "status": "open",
+      "artifact": "/opt/cursor/artifacts/incidents/INC-20261001-CURSOR-BILLING-ASYMMETRY-OPERATOR-PAYS.md",
+      "cloud_run": "bc-5c23d672-ea3e-4ec1-97f9-dc64ffa5238d"
+    },
+    {
+      "id": "INC-20260930-VDS-DISK-PRESSURE",
+      "polarity": "bad",
+      "severity": "high",
+      "category": "capacity",
+      "title": "VDS disk ~92% — bulk copy paused",
+      "description": "14.08 GB free (~91.88–92%). Bulk copies paused pending Hostinger/Proton migration selection. Risk: Ollama + Proton mirror fail near full.",
+      "evidence": ["Gemini paste Sep 30"],
+      "constraints": ["NEVER touch /root/silver_bot/", "NEVER rm -rf — use /_TO_DELETE/ only"],
+      "status": "open"
+    }
+  ],
+  "decisions_locked": {
+    "domain_purchase": "NO — BUY STOP active; ~2000 domains mostly unbuilt; JEV already on jevsdev.com + calibratedrouting.com",
+    "alibaba_token_plan_renew": "sfm_tokenplansolo_public_intl-sg-8444yp1g802 expires 2026-10-17"
+  }
+}
