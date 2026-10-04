@@ -23,11 +23,14 @@ Cloud agents reach the VDS over **Tailscale/Headscale mesh + SSH**. Public SSH t
 **Single CLI — always use this, never ask the operator to paste keys:**
 
 ```bash
+ops/vds/vds.sh autopilot       # bootstrap + prove + auto-deploy if SSH ready and drift detected
 ops/vds/vds.sh status          # readiness check
-ops/vds/vds.sh deploy kelvin   # apply Kelvin song domains on VDS
-ops/vds/vds.sh prove kelvin    # origin title checks
-ops/vds/vds.sh ssh 'df -h /'   # arbitrary remote command
+ops/vds/vds.sh deploy kelvin   # apply Kelvin song domain nginx + HTML on VDS
+ops/vds/vds.sh prove kelvin    # origin title checks (flags unauthorized .net aliases)
+ops/vds/vds.sh ssh 'df -h /'   # arbitrary remote command (mesh, else origin :22)
 ```
+
+**Autopilot rule:** Run `autopilot` at session start. Do not wait for the operator to pick lanes. If secrets are placeholders, autopilot still proves origin drift and writes `ops/vds/reports/latest.log`. When real secrets land, the next autopilot run deploys fixes without prompts.
 
 **Required secrets** (Cursor environment dashboard, one-time setup):
 

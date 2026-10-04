@@ -12,3 +12,6 @@ if "${ROOT}/vds.sh" status >/dev/null 2>&1; then
 else
   echo "VDS bootstrap incomplete — add secrets in Cursor environment dashboard (never paste keys in chat)."
 fi
+
+# Always run read-only autopilot probes (prove drift, write report) without blocking boot.
+"${ROOT}/vds.sh" autopilot >/dev/null 2>&1 || true
