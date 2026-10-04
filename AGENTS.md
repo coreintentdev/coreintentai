@@ -20,6 +20,13 @@ See `CLAUDE.md` for architecture details and `README.md` for usage examples.
 
 Cloud agents reach the VDS over **Tailscale/Headscale mesh + SSH**. Public SSH to `5.189.143.170` is blocked; use mesh IP `100.121.107.112`.
 
+**Proactive rule — do not stagnate waiting on operator:**
+
+1. On every VDS-related turn: run `ops/vds/vds.sh status` + update `ops/handover/LATEST-AUTO-STATUS.md` (HTTP probes) and **commit/push** if changed.
+2. If Cloud hands fail (exit 1): **do not end turn with only "run Mac script"** — also push fixes to git, merge blockers, file INC with timestamp.
+3. **Never** require operator to paste prove output back as the only next step. Mac lane runs `ops/handover/RUN-ALL-MAC.sh` once; prove lands on desk automatically.
+4. Operator Mac/COR already has SSH — Cloud cannot replace it until real secrets in environment.
+
 **Single CLI — always use this, never ask the operator to paste keys:**
 
 ```bash
