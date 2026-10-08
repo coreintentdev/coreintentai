@@ -2,20 +2,31 @@
 # Cloud Agent: wire VDS SSH when ZYNTHIO_DC_SSH_KEY secret is set in Cursor environment.
 set -euo pipefail
 
-KEY_PATH="${HOME}/.ssh/zynthio_dc"
-VDS_HOST="${ZYNTHIO_VDS_HOST:-100.121.107.112}"
-VDS_USER="${ZYNTHIO_VDS_USER:-root}"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${ROOT}/lib.sh"
 
 mkdir -p "${HOME}/.ssh"
 chmod 700 "${HOME}/.ssh"
 
-if [[ -n "${ZYNTHIO_DC_SSH_KEY:-}" ]]; then
-  printf '%s\n' "$ZYNTHIO_DC_SSH_KEY" > "$KEY_PATH"
-  chmod 600 "$KEY_PATH"
-  ssh-keyscan -H "$VDS_HOST" >> "${HOME}/.ssh/known_hosts" 2>/dev/null || true
-  echo "VDS SSH key installed for ${VDS_USER}@${VDS_HOST}"
-  ssh -i "$KEY_PATH" -o BatchMode=yes -o ConnectTimeout=12 \
-    "${VDS_USER}@${VDS_HOST}" "df -h / | tail -1" && echo "VDS SSH OK" || echo "VDS SSH probe failed (Tailscale/public path)"
-else
+if [[ -z "${ZYNTHIO_DC_SSH_KEY:-}" ]]; then
   echo "ZYNTHIO_DC_SSH_KEY not set — add once in Cursor environment secrets (do not paste in chat)."
+  exit 0
+fi
+
+printf '%s\n' "$ZYNTHIO_DC_SSH_KEY" > "$VDS_KEY_PATH"
+chmod 600 "$VDS_KEY_PATH"
+vds_ensure_known_hosts
+
+if ! vds_ssh_key_valid; then
+  echo "ZYNTHIO_DC_SSH_KEY is placeholder ($(wc -c < "$VDS_KEY_PATH") bytes) — replace with real Mac ~/.ssh/zynthio_dc in dashboard"
+  exit 0
+fi
+
+echo "VDS SSH key installed for ${VDS_USER}@${VDS_MESH_HOST}"
+
+if vds_run_ssh "df -h / | tail -1" 2>/dev/null; then
+  echo "VDS SSH OK via $(vds_resolve_ssh_host)"
+else
+  echo "VDS SSH probe failed (check key authorized on VDS or mesh/origin route)"
 fi
