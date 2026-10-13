@@ -65,6 +65,11 @@ export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
 
 // ---------------------------------------------------------------------------
+// Intelligence Fusion
+// ---------------------------------------------------------------------------
+export { IntelligenceFusion } from "./capabilities/fusion/index.js";
+
+// ---------------------------------------------------------------------------
 // Utilities
 // ---------------------------------------------------------------------------
 export {
@@ -127,6 +132,14 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  AssetIntelligence,
+  PreTradeIntelligence,
+  MarketState,
+  IntelligenceConflict,
+  CapabilitySummary,
+  ConvictionLevelType,
+  TradeGateDecisionType,
+  MarketPhaseType,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -163,4 +176,12 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  ConvictionLevel,
+  TradeGateDecision,
+  MarketPhase,
+  AssetIntelligenceSchema,
+  PreTradeIntelligenceSchema,
+  MarketStateSchema,
+  IntelligenceConflictSchema,
+  CapabilitySummarySchema,
 } from "./types/index.js";
