@@ -17,6 +17,15 @@ export {
   executeWithFallback,
   CoreIntentAIError,
 } from "./orchestrator/fallback.js";
+export {
+  classifyError,
+  getRetryDelay,
+  shouldOpenCircuit,
+} from "./orchestrator/errors.js";
+export type {
+  ErrorCategory,
+  ClassifiedError,
+} from "./orchestrator/errors.js";
 export { CircuitBreaker } from "./orchestrator/circuit-breaker.js";
 export type {
   CircuitState,
@@ -63,6 +72,8 @@ export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
 export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
+export { VolatilityAnalyzer } from "./capabilities/volatility/index.js";
+export { PortfolioOptimizer } from "./capabilities/portfolio/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -127,6 +138,8 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  VolatilityAnalysis,
+  PortfolioOptimization,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -163,4 +176,9 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  VolRegime,
+  TermStructureShape,
+  VolatilityAnalysisSchema,
+  OptimizationMethod,
+  PortfolioOptimizationSchema,
 } from "./types/index.js";

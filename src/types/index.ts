@@ -43,6 +43,7 @@ export interface OrchestrationRequest {
   preferredProvider?: ModelProvider;
   maxRetries?: number;
   timeoutMs?: number;
+  correlationId?: string;
 }
 
 export interface OrchestrationResponse {
@@ -52,6 +53,7 @@ export interface OrchestrationResponse {
   latencyMs: number;
   tokenUsage: TokenUsage;
   fallbackUsed: boolean;
+  correlationId?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -570,6 +572,156 @@ export const NarrativeReportSchema = z.object({
 });
 
 export type NarrativeReport = z.infer<typeof NarrativeReportSchema>;
+
+// ---------------------------------------------------------------------------
+// Volatility Intelligence
+// ---------------------------------------------------------------------------
+
+export const VolRegime = z.enum([
+  "compressed",
+  "low",
+  "normal",
+  "elevated",
+  "high",
+  "extreme",
+]);
+
+export const TermStructureShape = z.enum([
+  "contango",
+  "flat",
+  "backwardation",
+  "humped",
+]);
+
+export const VolatilityAnalysisSchema = z.object({
+  ticker: z.string(),
+  currentIV: z.number().min(0),
+  realizedVol: z.object({
+    vol5d: z.number().min(0),
+    vol20d: z.number().min(0),
+    vol60d: z.number().min(0),
+  }),
+  varianceRiskPremium: z.number(),
+  regime: VolRegime,
+  regimePercentile: z.number().min(0).max(100),
+  skew: z.object({
+    put25Delta: z.number().min(0),
+    atm: z.number().min(0),
+    call25Delta: z.number().min(0),
+    skewIndex: z.number(),
+    interpretation: z.string(),
+  }),
+  termStructure: z.object({
+    shape: TermStructureShape,
+    front: z.number().min(0),
+    mid: z.number().min(0),
+    back: z.number().min(0),
+    slope: z.number(),
+    eventPremium: z.string().optional(),
+  }),
+  forecast: z.object({
+    direction: z.enum(["rising", "stable", "falling"]),
+    targetRange: z.object({
+      low: z.number().min(0),
+      high: z.number().min(0),
+    }),
+    timeframe: z.string(),
+    confidence: z.number().min(0).max(1),
+    catalysts: z.array(z.string()),
+  }),
+  tradingImplications: z.object({
+    optimalStrategy: z.string(),
+    positionSizing: z.string(),
+    hedgingCost: z.string(),
+    opportunities: z.array(z.string()),
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type VolatilityAnalysis = z.infer<typeof VolatilityAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
+// Portfolio Optimization
+// ---------------------------------------------------------------------------
+
+export const OptimizationMethod = z.enum([
+  "mean_variance",
+  "black_litterman",
+  "risk_parity",
+  "min_variance",
+  "max_diversification",
+]);
+
+export const PortfolioOptimizationSchema = z.object({
+  portfolioId: z.string(),
+  method: OptimizationMethod,
+  allocations: z.array(
+    z.object({
+      ticker: z.string(),
+      currentWeight: z.number().min(0).max(1),
+      targetWeight: z.number().min(0).max(1),
+      delta: z.number(),
+      riskContribution: z.number().min(0).max(1),
+      expectedReturn: z.number(),
+      rationale: z.string(),
+    })
+  ),
+  portfolioMetrics: z.object({
+    expectedReturn: z.number(),
+    expectedVolatility: z.number().min(0),
+    sharpeRatio: z.number(),
+    sortinoRatio: z.number(),
+    maxDrawdown: z.number(),
+    cvar95: z.number(),
+    diversificationRatio: z.number().min(0),
+    effectiveBets: z.number().min(0),
+    turnover: z.number().min(0),
+  }),
+  factorExposures: z.array(
+    z.object({
+      factor: z.string(),
+      exposure: z.number(),
+      intentional: z.boolean(),
+      comment: z.string(),
+    })
+  ),
+  rebalancingPlan: z.object({
+    urgency: z.enum(["immediate", "scheduled", "opportunistic", "none"]),
+    trades: z.array(
+      z.object({
+        ticker: z.string(),
+        action: z.enum(["buy", "sell", "trim", "add"]),
+        shares: z.number().min(0),
+        dollarAmount: z.number().min(0),
+        priority: z.number().int().min(1).max(5),
+        reason: z.string(),
+      })
+    ),
+    estimatedCost: z.number().min(0),
+    taxImplications: z.string(),
+  }),
+  scenarioAnalysis: z.array(
+    z.object({
+      scenario: z.string(),
+      probability: z.number().min(0).max(1),
+      portfolioReturn: z.number(),
+      worstPosition: z.string(),
+      bestPosition: z.string(),
+      recommendation: z.string(),
+    })
+  ),
+  constraints: z.object({
+    maxPositionSize: z.number().min(0).max(1),
+    maxSectorConcentration: z.number().min(0).max(1),
+    minCashReserve: z.number().min(0).max(1),
+    maxTurnover: z.number().min(0).max(1),
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type PortfolioOptimization = z.infer<typeof PortfolioOptimizationSchema>;
 
 // ---------------------------------------------------------------------------
 // Agent System
