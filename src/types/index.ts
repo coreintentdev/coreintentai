@@ -572,6 +572,102 @@ export const NarrativeReportSchema = z.object({
 export type NarrativeReport = z.infer<typeof NarrativeReportSchema>;
 
 // ---------------------------------------------------------------------------
+// Scenario Analysis & Stress Testing
+// ---------------------------------------------------------------------------
+
+export const ScenarioType = z.enum([
+  "macro_shock",
+  "geopolitical",
+  "sector_rotation",
+  "volatility_event",
+  "idiosyncratic",
+  "black_swan",
+]);
+
+export const ScenarioAnalysisSchema = z.object({
+  scenarioName: z.string(),
+  scenarioType: ScenarioType,
+  description: z.string(),
+  probability: z.number().min(0).max(1),
+  severity: z.number().min(0).max(100),
+  timeHorizon: z.string(),
+  historicalAnalogue: z.object({
+    event: z.string(),
+    year: z.number().int(),
+    similarity: z.number().min(0).max(1),
+    marketImpact: z.string(),
+  }),
+  marketImpact: z.object({
+    equities: z.object({
+      direction: z.enum(["up", "down", "mixed"]),
+      magnitudePct: z.number(),
+      drivers: z.array(z.string()),
+    }),
+    bonds: z.object({
+      direction: z.enum(["up", "down", "mixed"]),
+      magnitudePct: z.number(),
+      drivers: z.array(z.string()),
+    }),
+    commodities: z.object({
+      direction: z.enum(["up", "down", "mixed"]),
+      magnitudePct: z.number(),
+      drivers: z.array(z.string()),
+    }),
+    crypto: z.object({
+      direction: z.enum(["up", "down", "mixed"]),
+      magnitudePct: z.number(),
+      drivers: z.array(z.string()),
+    }),
+    volatility: z.object({
+      direction: z.enum(["up", "down"]),
+      vixTarget: z.number().min(0),
+      drivers: z.array(z.string()),
+    }),
+  }),
+  portfolioImpact: z.array(
+    z.object({
+      ticker: z.string(),
+      currentWeight: z.number(),
+      estimatedImpactPct: z.number(),
+      impactDrivers: z.array(z.string()),
+      vulnerabilityScore: z.number().min(0).max(100),
+    })
+  ),
+  cascadeEffects: z.array(
+    z.object({
+      order: z.number().int().min(1).max(3),
+      effect: z.string(),
+      probability: z.number().min(0).max(1),
+      timelag: z.string(),
+    })
+  ),
+  hedgingRecommendations: z.array(
+    z.object({
+      instrument: z.string(),
+      action: z.enum(["buy", "sell"]),
+      rationale: z.string(),
+      cost: z.string(),
+      effectiveness: z.number().min(0).max(1),
+    })
+  ),
+  portfolioVaR: z.object({
+    priorVaR95: z.number(),
+    stressedVaR95: z.number(),
+    maxDrawdown: z.number(),
+    recoveryTimeline: z.string(),
+  }),
+  actionPlan: z.object({
+    immediate: z.array(z.string()),
+    shortTerm: z.array(z.string()),
+    contingent: z.array(z.string()),
+  }),
+  summary: z.string(),
+  timestamp: z.string().datetime(),
+});
+
+export type ScenarioAnalysis = z.infer<typeof ScenarioAnalysisSchema>;
+
+// ---------------------------------------------------------------------------
 // Agent System
 // ---------------------------------------------------------------------------
 

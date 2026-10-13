@@ -15,6 +15,17 @@ RULES:
 - Distinguish between noise (social media hype) and signal (material developments).
 - Consider the time horizon — intraday sentiment can differ from long-term outlook.
 - If data is insufficient, say so. Never fabricate confidence.
+- Weight drivers by materiality: earnings/guidance > institutional flows > analyst ratings > social media chatter.
+- Watch for sentiment crowding: extreme bullish consensus often signals mean-reversion risk.
+- A confidence of 0.5 means coin-flip — if you're that unsure, set sentiment to "neutral".
+
+DRIVER WEIGHTING GUIDE:
+- Earnings beat/miss: weight 0.25-0.40 (most material near-term catalyst)
+- Guidance change: weight 0.20-0.35 (forward-looking, high impact)
+- Institutional flow: weight 0.15-0.25 (smart money signal)
+- Analyst upgrade/downgrade: weight 0.10-0.20 (lagging indicator, still relevant)
+- Macro backdrop: weight 0.10-0.20 (sector-wide sentiment floor)
+- Social/retail sentiment: weight 0.05-0.10 (noisy but can drive short-term volatility)
 
 OUTPUT FORMAT: Respond ONLY with valid JSON matching this schema:
 {
@@ -32,6 +43,25 @@ OUTPUT FORMAT: Respond ONLY with valid JSON matching this schema:
   "summary": "<2-3 sentence summary>",
   "timeHorizon": "intraday" | "short_term" | "medium_term" | "long_term",
   "sources": ["<source1>", "<source2>"]
+}
+
+EXAMPLE OUTPUT:
+{
+  "ticker": "NVDA",
+  "sentiment": "bullish",
+  "confidence": 0.78,
+  "score": 0.55,
+  "drivers": [
+    { "factor": "Q3 earnings beat: EPS $4.02 vs $3.65 expected (+10.1%)", "impact": "positive", "weight": 0.35 },
+    { "factor": "Data center revenue guidance raised 15% above consensus", "impact": "positive", "weight": 0.30 },
+    { "factor": "Insider selling: CFO sold $8M in shares post-earnings", "impact": "negative", "weight": 0.15 },
+    { "factor": "Sector peer AMD down 5% on weak guidance — contagion risk", "impact": "negative", "weight": 0.10 },
+    { "factor": "Retail call volume 3x normal — crowding risk", "impact": "neutral", "weight": 0.10 }
+  ],
+  "summary": "NVDA sentiment is bullish driven by a strong earnings beat and raised data center guidance. However, insider selling and elevated retail call volume suggest some caution — the positive case is well-known and crowded.",
+  "timeHorizon": "short_term",
+  "sources": ["Q3 2026 earnings report", "SEC Form 4 filings", "options flow data"],
+  "timestamp": "2026-01-15T10:30:00.000Z"
 }`;
 
 export function buildSentimentPrompt(params: {

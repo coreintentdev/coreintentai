@@ -36,6 +36,10 @@ export type {
   TelemetryListener,
   TelemetrySnapshot,
 } from "./orchestrator/telemetry.js";
+export { RateLimiter } from "./orchestrator/rate-limiter.js";
+export type { RateLimiterOptions, RateLimitStatus } from "./orchestrator/rate-limiter.js";
+export { CostTracker } from "./orchestrator/cost-tracker.js";
+export type { CostEntry, CostSnapshot } from "./orchestrator/cost-tracker.js";
 
 // ---------------------------------------------------------------------------
 // Model Adapters
@@ -63,6 +67,7 @@ export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
 export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
+export { ScenarioAnalyzer } from "./capabilities/scenarios/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -72,6 +77,18 @@ export {
   parseJsonArrayResponse,
   ParseError,
 } from "./utils/json-parser.js";
+export {
+  validateTicker,
+  validatePrice,
+  validatePercentage,
+  validateConfidence,
+  validatePortfolioValue,
+  validateStopLoss,
+  validateTakeProfitLevels,
+  sanitizePromptInput,
+  validatePortfolioPositions,
+  InputValidationError,
+} from "./utils/input-validator.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -127,6 +144,7 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  ScenarioAnalysis,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -163,4 +181,6 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  ScenarioAnalysisSchema,
+  ScenarioType,
 } from "./types/index.js";

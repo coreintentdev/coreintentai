@@ -106,8 +106,9 @@ export class RiskAssessor {
       critical: 5,
     };
 
+    // Auto-approve only minimal/low risk (score < 2). Moderate and above require review.
     const approved =
-      riskLevelScore[assessment.overallRisk] <= 2 &&
+      riskLevelScore[assessment.overallRisk] < 2 &&
       criticalWarnings.length === 0;
 
     const reason = approved
