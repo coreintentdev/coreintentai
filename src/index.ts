@@ -63,6 +63,7 @@ export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
 export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
+export { OptionsIntelligence } from "./capabilities/options/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -72,6 +73,11 @@ export {
   parseJsonArrayResponse,
   ParseError,
 } from "./utils/json-parser.js";
+
+// ---------------------------------------------------------------------------
+// Analytics
+// ---------------------------------------------------------------------------
+export { PerformanceTracker } from "./analytics/performance-tracker.js";
 
 // ---------------------------------------------------------------------------
 // Agents
@@ -127,6 +133,13 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  OptionsFlow,
+  VolatilitySurface,
+  OptionsStrategy,
+  GreeksAnalysis,
+  GexAnalysis,
+  SignalRecord,
+  PerformanceSnapshot,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -163,4 +176,15 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  FlowType,
+  StrategyCategory,
+  GexRegime,
+  OptionsFlowSchema,
+  VolatilitySurfaceSchema,
+  OptionsStrategySchema,
+  GreeksAnalysisSchema,
+  GexAnalysisSchema,
+  SignalOutcome,
+  SignalRecordSchema,
+  PerformanceSnapshotSchema,
 } from "./types/index.js";

@@ -82,7 +82,7 @@ export class AdaptiveRouter {
     intent: TaskIntent;
     provider: ModelProvider;
     success: boolean;
-    latencyMs: number;
+    latencyMs?: number;
     qualityScore?: number;
   }): void {
     const s = this.getStats(params.intent, params.provider);
@@ -96,17 +96,19 @@ export class AdaptiveRouter {
 
     const quality = params.qualityScore ?? (params.success ? 0.7 : 0.0);
     s.qualityScores.push(quality);
-    s.latencies.push(params.latencyMs);
-
     if (s.qualityScores.length > 100) s.qualityScores.shift();
-    if (s.latencies.length > 100) s.latencies.shift();
 
     s.recentQuality =
       s.recentQuality * this.options.decayFactor +
       quality * (1 - this.options.decayFactor);
-    s.recentLatency =
-      s.recentLatency * this.options.decayFactor +
-      params.latencyMs * (1 - this.options.decayFactor);
+
+    if (params.latencyMs !== undefined) {
+      s.latencies.push(params.latencyMs);
+      if (s.latencies.length > 100) s.latencies.shift();
+      s.recentLatency =
+        s.recentLatency * this.options.decayFactor +
+        params.latencyMs * (1 - this.options.decayFactor);
+    }
   }
 
   scoreProvider(intent: TaskIntent, provider: ModelProvider): ProviderScore {
