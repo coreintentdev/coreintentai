@@ -85,7 +85,7 @@ export async function executeWithFallback(
         }
 
         const baseDelay = Math.min(1000 * 2 ** (attempt - 1), 8000);
-        const jitter = Math.random() * baseDelay * 0.3;
+        const jitter = (Math.random() * 2 - 1) * baseDelay * 0.3;
         await sleep(baseDelay + jitter);
       }
     }

@@ -63,6 +63,7 @@ export { ConsensusEngine } from "./capabilities/consensus/index.js";
 export { MomentumScorer } from "./capabilities/momentum/index.js";
 export { NarrativeIntelligence } from "./capabilities/narrative/index.js";
 export { LiquidityAnalyzer } from "./capabilities/liquidity/index.js";
+export { TechnicalAnalyzer } from "./capabilities/technical/index.js";
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -127,6 +128,9 @@ export type {
   LiquidityRegimeType,
   ExecutionPlan,
   ExecutionUrgencyType,
+  TechnicalAnalysis,
+  StructuredResearch,
+  ResearchFinding,
   AgentConfig,
   AgentMessage,
   AgentResult,
@@ -163,4 +167,12 @@ export {
   ExecutionUrgency,
   ExecutionAlgorithm,
   ExecutionPlanSchema,
+  TechnicalAnalysisSchema,
+  TrendPhase,
+  PatternType,
+  SRStrength,
+  SRType,
+  DivergenceType,
+  StructuredResearchSchema,
+  ResearchFindingSchema,
 } from "./types/index.js";

@@ -154,3 +154,6 @@ Thumbs.db
 *~
 .idea/
 .vscode/
+
+# Test artifacts
+test-output.txt
