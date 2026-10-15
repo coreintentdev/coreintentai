@@ -36,9 +36,14 @@ echo
 echo "## 3. Land handover pack (all incident threads)"
 rm -rf "${VDS_PATH}.tmp"
 cp -a "$PACK_SRC" "${VDS_PATH}.tmp"
+( cd "${VDS_PATH}.tmp" && sha256sum -c MANIFEST.sha256 )
+# mv into an existing directory nests the tmp dir inside it. Move the old pack aside first.
+if [[ -e "$VDS_PATH" ]]; then
+  rm -rf "${VDS_PATH}.prev"
+  mv "$VDS_PATH" "${VDS_PATH}.prev"
+fi
 mv "${VDS_PATH}.tmp" "$VDS_PATH"
-cd "$VDS_PATH"
-sha256sum -c MANIFEST.sha256
+rm -rf "${VDS_PATH}.prev"
 echo "handover pack: OK at ${VDS_PATH}"
 echo
 

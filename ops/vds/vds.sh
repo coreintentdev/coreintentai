@@ -98,14 +98,21 @@ cmd_prove_kelvin() {
 
 cmd_autopilot() {
   local ts report drift=0 deploy_ok=0
+  # Mark this process so bootstrap_vds.sh cannot re-enter autopilot.
+  export VDS_AUTOPILOT=1
   ts="$(date -u +%Y%m%dT%H%M%SZ)"
   mkdir -p "$REPORT_DIR"
   report="${REPORT_DIR}/autopilot-${ts}.log"
 
+  # Redirect keeps this brace in the current shell so drift=1 is visible after tee.
+  # A pipe would run the brace in a subshell and the parent drift would stay 0.
   {
     echo "# VDS autopilot ${ts}"
     echo
-    bash "${ROOT}/bootstrap_vds.sh" 2>&1 || true
+    if [[ "${VDS_BOOTSTRAPPED:-}" != 1 ]]; then
+      bash "${ROOT}/bootstrap_mesh.sh" 2>&1 || true
+      bash "${ROOT}/bootstrap_ssh.sh" 2>&1 || true
+    fi
     echo
     cmd_status 2>&1 || true
     echo
@@ -136,7 +143,7 @@ cmd_autopilot() {
     else
       echo "deploy: skip (SSH not ready — fix dashboard secrets; HTTP prove still ran)"
     fi
-  } 2>&1 | tee "$report"
+  } > >(tee "$report") 2>&1
 
   echo "report: ${report}"
   ln -sf "$(basename "$report")" "${REPORT_DIR}/latest.log"
