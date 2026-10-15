@@ -34,7 +34,8 @@ cmd_status() {
     if vds_mesh_key_valid; then
       echo "mesh key: present"
     else
-      echo "mesh key: PLACEHOLDER (${#HEADSCALE_PREAUTH_KEY}${TAILSCALE_AUTHKEY:+/${#TAILSCALE_AUTHKEY}} bytes — replace in Cursor dashboard)"
+      local hk="${HEADSCALE_PREAUTH_KEY:-}" tk="${TAILSCALE_AUTHKEY:-}"
+      echo "mesh key: PLACEHOLDER (${#hk}${tk:+/${#tk}} bytes — replace in Cursor dashboard)"
       ok=1
     fi
   else
@@ -148,10 +149,10 @@ cmd_autopilot() {
   echo "report: ${report}"
   ln -sf "$(basename "$report")" "${REPORT_DIR}/latest.log"
 
-  if vds_ssh_key_valid && vds_run_ssh "echo ssh_ok" 2>/dev/null | grep -q ssh_ok; then
+  if [[ "$deploy_ok" -eq 1 ]]; then
     return 0
   fi
-  # SSH blocked but we still ran probes — exit 0 if no drift, else 1
+  # SSH blocked or deploy failed — exit 0 if no drift, else 1
   return "$drift"
 }
 
