@@ -1,6 +1,8 @@
 # Thread status — done vs VDS handover — 2026-10-01 23:16 UTC
 
-**Verdict:** Documentation **done in GitHub**. **NOT landed on VDS or Proton** (no checksum prove from this lane).
+**Verdict:** Documentation **done in GitHub**. **NOT landed on VDS or Proton** until `RUN-ALL-ON-VDS.sh` or `RUN-ALL-MAC.sh` completes with prove file.
+
+**Handover command (VDS on-box):** `bash ops/handover/RUN-ALL-ON-VDS.sh` — see PR #32 / `ops/handover/README.md`.
 
 ---
 
